@@ -356,7 +356,7 @@ function ExplorePage({session,onOpenChat,onOpenDetail,onOpenPerfil}){
       {/* Filtro modo — solo visible cuando se muestran ofertas */}
       {(filtroTipo==="all"||filtroTipo==="oferta")&&(
         <div style={{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}}>
-          {[{v:"all",l:"Todos"},{v:"curso",l:Cursos},{v:"particular",l:"Clases particulares"}].map(({v,l})=>(
+          {[{v:"all",l:"Todos"},{v:"curso",l:"Cursos"},{v:"particular",l:"Clases particulares"}].map(({v,l})=>(
             <button key={v} onClick={()=>setFiltroModo(v)} style={{background:filtroModo===v?"#4ECB7122":C.card,color:filtroModo===v?C.success:C.muted,border:`1px solid ${filtroModo===v?"#4ECB7144":C.border}`,borderRadius:20,padding:"4px 11px",fontSize:11,fontWeight:filtroModo===v?700:400,cursor:"pointer",fontFamily:FONT}}>{l}</button>
           ))}
         </div>
