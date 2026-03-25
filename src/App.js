@@ -228,7 +228,7 @@ function AuthScreen({onLogin}){
         <div style={{position:"relative",zIndex:1}}>
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:48}}>
             <div style={{width:42,height:42,borderRadius:10,background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>🎓</div>
-            <span style={{fontSize:22,fontWeight:700,color:"#fff",letterSpacing:"-.4px"}}>Classe<span style={{opacity:.85}}>Link</span></span>
+            <span style={{fontSize:22,fontWeight:700,color:"#fff",letterSpacing:"-.4px"}}>Luderis</span>
           </div>
           <h1 style={{color:"#fff",fontSize:34,fontWeight:700,lineHeight:1.2,margin:"0 0 16px",letterSpacing:"-.5px"}}>Conectá con el aprendizaje</h1>
           <p style={{color:"rgba(255,255,255,.75)",fontSize:15,lineHeight:1.7,margin:0}}>La plataforma donde docentes y estudiantes se encuentran. Sin intermediarios, sin comisiones.</p>
@@ -252,7 +252,7 @@ function AuthScreen({onLogin}){
             className="auth-logo-mobile">
             <style>{`.auth-logo-mobile{display:flex!important;}@media(min-width:701px){.auth-logo-mobile{display:none!important;}}`}</style>
             <div style={{width:36,height:36,borderRadius:8,background:"#0A66C2",display:"flex",alignItems:"center",justifyContent:"center",fontSize:19}}>🎓</div>
-            <span style={{fontSize:20,fontWeight:700,color:"#191919"}}>Classe<span style={{color:"#0A66C2"}}>Link</span></span>
+            <span style={{fontSize:20,fontWeight:700,color:"#191919"}}>Luderis></span>
           </div>
 
           <h2 style={{color:"#191919",fontSize:22,fontWeight:700,margin:"0 0 6px"}}>
@@ -357,7 +357,7 @@ function Sidebar({page,setPage,session,onLogout,onNewPost,unreadCount,ofertasCou
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <div style={{width:32,height:32,borderRadius:8,background:C.accent,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17}}>🎓</div>
-            <span style={{fontSize:16,fontWeight:700,color:C.text,letterSpacing:"-.3px"}}>Classe<span style={{color:C.accent}}>Link</span></span>
+            <span style={{fontSize:16,fontWeight:700,color:C.text,letterSpacing:"-.3px"}}>Luderis</span>
           </div>
           {mobile&&<button onClick={onClose} style={{background:"none",border:"none",color:C.muted,fontSize:20,cursor:"pointer",padding:2}}>×</button>}
         </div>
@@ -7460,7 +7460,7 @@ export default function App(){
           <div style={{position:"fixed",top:0,left:0,right:0,height:52,background:C.surface,borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 16px",zIndex:50,boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <button onClick={()=>setSidebarOpen(true)} style={{background:"none",border:"none",color:C.text,fontSize:20,cursor:"pointer",padding:"4px 6px",lineHeight:1}}>☰</button>
-              <span style={{fontSize:16,fontWeight:700,color:C.text,letterSpacing:"-.3px"}}>Classe<span style={{color:C.accent}}>Link</span></span>
+              <span style={{fontSize:16,fontWeight:700,color:C.text,letterSpacing:"-.3px"}}>Luderis</span>
             </div>
             <Btn onClick={()=>{setEditPost(null);setShowForm(true);}} style={{padding:"6px 14px",fontSize:12,borderRadius:16}}>+ Publicar</Btn>
           </div>
