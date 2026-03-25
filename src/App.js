@@ -168,15 +168,15 @@ function AuthScreen({onLogin}){
           <button onClick={()=>setShowTerminos(false)} style={{background:"none",border:"1px solid #E0DED8",borderRadius:6,color:"#666",padding:"6px 14px",cursor:"pointer",fontSize:13,fontFamily:FONT}}>← Volver</button>
         </div>
         {[
-          ["1. Aceptación","Al registrarte en ClasseLink aceptás estos términos. Si no estás de acuerdo, no uses la plataforma."],
-          ["2. Descripción del servicio","ClasseLink es una plataforma que conecta docentes y estudiantes. Facilitamos el encuentro entre partes pero no somos empleadores, agencias ni intermediarios educativos oficiales."],
+          ["1. Aceptación","Al registrarte en Luderis aceptás estos términos. Si no estás de acuerdo, no uses la plataforma."],
+          ["2. Descripción del servicio","Luderis es una plataforma que conecta docentes y estudiantes. Facilitamos el encuentro entre partes pero no somos empleadores, agencias ni intermediarios educativos oficiales."],
           ["3. Registro y cuenta","Debés tener al menos 18 años o contar con autorización de un tutor legal. Sos responsable de mantener la confidencialidad de tu contraseña y de toda la actividad que ocurra en tu cuenta."],
           ["4. Uso aceptable","Está prohibido publicar contenido falso, ofensivo, discriminatorio o ilegal. No podés usar la plataforma para acosar, engañar o perjudicar a otros usuarios. Cualquier transacción económica es responsabilidad exclusiva de las partes involucradas."],
-          ["5. Contenido del usuario","Al publicar contenido en ClasseLink (descripciones, materiales, reseñas), otorgás a ClasseLink una licencia no exclusiva para mostrarlo en la plataforma. Sos el único responsable del contenido que publicás."],
+          ["5. Contenido del usuario","Al publicar contenido en Luderis (descripciones, materiales, reseñas), otorgás a Luderis una licencia no exclusiva para mostrarlo en la plataforma. Sos el único responsable del contenido que publicás."],
           ["6. Privacidad","Recopilamos tu email y la información que voluntariamente proporcionás (nombre, bio, ubicación). No vendemos tus datos a terceros. Podemos usar datos agregados y anónimos para mejorar el servicio."],
-          ["7. Limitación de responsabilidad","ClasseLink no garantiza la calidad, idoneidad ni veracidad de los servicios ofrecidos por los docentes. No somos responsables por disputas, daños o pérdidas que surjan de las relaciones entre usuarios."],
+          ["7. Limitación de responsabilidad","Luderis no garantiza la calidad, idoneidad ni veracidad de los servicios ofrecidos por los docentes. No somos responsables por disputas, daños o pérdidas que surjan de las relaciones entre usuarios."],
           ["8. Modificaciones","Podemos actualizar estos términos con previo aviso de 30 días por email. El uso continuado de la plataforma implica la aceptación de los nuevos términos."],
-          ["9. Contacto","Ante dudas o reclamos escribinos a contacto@classelink.com"],
+          ["9. Contacto","Ante dudas o reclamos escribinos a contacto@luderis.com"],
         ].map(([titulo,texto])=>(
           <div key={titulo} style={{marginBottom:18,paddingBottom:18,borderBottom:"1px solid #F3F2EF"}}>
             <div style={{fontWeight:700,color:"#191919",fontSize:14,marginBottom:6}}>{titulo}</div>
