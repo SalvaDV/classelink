@@ -646,9 +646,9 @@ function PostCard({post,session,onOpenChat,onOpenDetail,onOpenPerfil,avgPub,coun
         {post.precio&&<span style={{fontSize:12,fontWeight:600,color:C.accent,background:C.accentDim,borderRadius:4,padding:"3px 8px"}}>{fmtPrice(post.precio,post.moneda)}{post.precio_tipo&&post.modo!=="curso"?` /${post.precio_tipo}`:""}</span>}
         {(post.modo==="grupal"||post.modo==="curso")&&<span style={{fontSize:12,color:C.success,background:C.success+"12",borderRadius:4,padding:"3px 8px",border:`1px solid ${C.success}30`}}>📚 Curso</span>}
         {post.modo==="particular"&&<span style={{fontSize:12,color:C.info,background:C.info+"12",borderRadius:4,padding:"3px 8px",border:`1px solid ${C.info}30`}}>👤 Particular</span>}
-        {post.modalidad==="virtual"&&<span style={{fontSize:12,color:C.muted,background:C.bg,borderRadius:4,padding:"3px 8px",border:`1px solid ${C.border}`}}>🌐 Virtual</span>}
-        {post.modalidad==="presencial"&&<span style={{fontSize:12,color:C.muted,background:C.bg,borderRadius:4,padding:"3px 8px",border:`1px solid ${C.border}`}}>📍 Presencial</span>}
-        {post.modalidad==="mixto"&&<span style={{fontSize:12,color:C.muted,background:C.bg,borderRadius:4,padding:"3px 8px",border:`1px solid ${C.border}`}}>↔ Mixto</span>}
+        {post.modalidad==="virtual"&&<span style={{fontSize:12,color:C.muted,background:C.bg,borderRadius:4,padding:"3px 8px",border:`1px solid ${C.border}`}}> Virtual</span>}
+        {post.modalidad==="presencial"&&<span style={{fontSize:12,color:C.muted,background:C.bg,borderRadius:4,padding:"3px 8px",border:`1px solid ${C.border}`}}> Presencial</span>}
+        {post.modalidad==="mixto"&&<span style={{fontSize:12,color:C.muted,background:C.bg,borderRadius:4,padding:"3px 8px",border:`1px solid ${C.border}`}}> Mixto</span>}
         {post.fecha_inicio&&<span style={{fontSize:12,color:C.muted,background:C.bg,borderRadius:4,padding:"3px 8px",border:`1px solid ${C.border}`}}>Inicia {fmt(post.fecha_inicio)}</span>}
         {yaOferte&&!esMio&&<span style={{fontSize:11,fontWeight:600,padding:"3px 8px",borderRadius:4,background:"#F59E0B12",border:"1px solid #F59E0B30",color:"#B45309"}}>Oferta enviada</span>}
         {fueRechazado&&<span style={{fontSize:11,fontWeight:600,padding:"3px 8px",borderRadius:4,background:C.danger+"12",color:C.danger,border:`1px solid ${C.danger}30`}}>Oferta rechazada</span>}
@@ -707,7 +707,7 @@ function BusquedaIA({posts,session,onOpenDetail,onClose}){
     try{
       // Mandar los posts como contexto, pedir IDs recomendados
       const postsCtx=posts.slice(0,80).map(p=>({id:p.id,titulo:p.titulo,materia:p.materia,descripcion:(p.descripcion||"").slice(0,120),tipo:p.tipo,precio:p.precio,modalidad:p.modalidad,ubicacion:p.ubicacion}));
-      const rawIA=await sb.callIA(`Sos un asistente de búsqueda para ClasseLink, plataforma educativa argentina.
+      const rawIA=await sb.callIA(`Sos un asistente de búsqueda para Luderis, plataforma educativa argentina.
 El usuario describe lo que busca. Devolvé las publicaciones más relevantes.
 SIEMPRE respondé con JSON válido: {"ids":["id1","id2"],"explanation":"frase breve"}
 Máximo 6 IDs. Sin resultados: {"ids":[],"explanation":"No encontré clases que coincidan."}`,
@@ -779,7 +779,7 @@ Máximo 6 IDs. Sin resultados: {"ids":[],"explanation":"No encontré clases que 
                         <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:3}}>
                           {p.materia&&<span style={{fontSize:11,color:C.muted}}>{p.materia}</span>}
                           {p.precio&&<span style={{fontSize:11,color:C.accent,fontWeight:700}}>{fmtPrice(p.precio)}</span>}
-                          {p.modalidad&&<span style={{fontSize:11,color:C.muted}}>{p.modalidad==="virtual"?"🌐":p.modalidad==="presencial"?"📍":"⟳"} {p.modalidad}</span>}
+                          {p.modalidad&&<span style={{fontSize:11,color:C.muted}}>{p.modalidad==="virtual"?"":p.modalidad==="presencial"?"":""} {p.modalidad}</span>}
                         </div>
                         <div style={{color:C.muted,fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.descripcion}</div>
                       </div>
@@ -1017,7 +1017,7 @@ function ExplorePage({session,onOpenChat,onOpenDetail,onOpenPerfil,onOpenCurso})
             <button key={v} onClick={()=>setFiltroTipo(v)} style={{padding:"4px 14px",borderRadius:20,fontSize:12,fontWeight:filtroTipo===v?600:400,cursor:"pointer",fontFamily:FONT,background:filtroTipo===v?C.accent:"transparent",color:filtroTipo===v?"#fff":C.muted,border:`1px solid ${filtroTipo===v?C.accent:C.border}`,transition:"all .12s"}}>{l}</button>
           ))}
           <div style={{width:1,height:18,background:C.border,margin:"0 2px"}}/>
-          {[["presencial","📍 Presencial"],["virtual","🌐 Virtual"]].map(([v,l])=>(
+          {[["presencial"," Presencial"],["virtual"," Virtual"]].map(([v,l])=>(
             <button key={v} onClick={()=>setFiltroModalidad(filtroModalidad===v?"all":v)} style={{padding:"4px 12px",borderRadius:20,fontSize:12,fontWeight:filtroModalidad===v?600:400,cursor:"pointer",fontFamily:FONT,background:filtroModalidad===v?C.accentDim:"transparent",color:filtroModalidad===v?C.accent:C.muted,border:`1px solid ${filtroModalidad===v?C.accent:C.border}`,transition:"all .12s"}}>{l}</button>
           ))}
           <div style={{marginLeft:"auto",fontSize:12,color:C.muted}}>{filtered.length} resultado{filtered.length!==1?"s":""}</div>
@@ -1491,16 +1491,16 @@ function InscripcionesPage({session,onOpenCurso,onOpenChat,onMarkNotifsRead}){
     if(ini&&hoy<ini){
       const dias=Math.ceil((ini-hoy)/86400000);
       if(dias===0)return{icon:"🟢",texto:"Inicia hoy",color:C.success};
-      if(dias===1)return{icon:"📅",texto:"Inicia mañana",color:C.info};
-      return{icon:"📅",texto:`Inicia en ${dias} día${dias!==1?"s":""}`,color:C.info};
+      if(dias===1)return{texto:"Inicia mañana",color:C.info};
+      return{texto:`Inicia en ${dias} día${dias!==1?"s":""}`,color:C.info};
     }
     // Ya empezó — mostrar cuánto falta para terminar
     if(fin){
       const dias=Math.ceil((fin-hoy)/86400000);
-      if(dias<0)return{icon:"·",texto:"Período finalizado",color:C.muted};
-      if(dias===0)return{icon:"⚠️",texto:"Finaliza hoy",color:C.danger};
-      if(dias===1)return{icon:"⏳",texto:"Finaliza mañana",color:C.warn};
-      return{icon:"⏳",texto:`Finaliza en ${dias} día${dias!==1?"s":""}`,color:dias<=7?C.danger:dias<=30?C.warn:C.muted};
+      if(dias<0)return{texto:"Período finalizado",color:C.muted};
+      if(dias===0)return{texto:"Finaliza hoy",color:C.danger};
+      if(dias===1)return{texto:"Finaliza mañana",color:C.warn};
+      return{texto:`Finaliza en ${dias} día${dias!==1?"s":""}`,color:dias<=7?C.danger:dias<=30?C.warn:C.muted};
     }
     // Empezó pero sin fecha de fin
     if(ini&&hoy>=ini)return{icon:"🟢",texto:"En curso",color:C.success};
@@ -3334,7 +3334,7 @@ function CertificadoBtn({post,session,inscripcion}){
       ctx.fillStyle="#F5C842";
       ctx.font="bold 22px Georgia, serif";
       ctx.textAlign="center";
-      ctx.fillText("ClasseLink",600,90);
+      ctx.fillText("Luderis",600,90);
 
       // Texto principal
       ctx.fillStyle="#F0EDE6";
@@ -3388,7 +3388,7 @@ function CertificadoBtn({post,session,inscripcion}){
       // Firma simulada
       ctx.fillStyle="#F5C842";
       ctx.font="italic 16px Georgia, serif";
-      ctx.fillText("ClasseLink — Plataforma Educativa",600,640);
+      ctx.fillText("Luderis — Plataforma Educativa",600,640);
 
       // ID único
       const uid=Math.random().toString(36).slice(2,10).toUpperCase();
@@ -3492,8 +3492,6 @@ const FORMATO_LABELS = {
   audio:              {label:"Subir audio",           icon:"🎵"},
   video:              {label:"Subir video",           icon:"🎬"},
   rubrica:            {label:"Evaluación por rúbrica",icon:"📊"},
-  autoevaluacion:     {label:"Autoevaluación guiada", icon:"🪞"},
-  peer_review:        {label:"Revisión entre pares",  icon:"👥"},
 };
 
 const NIVEL_LABELS = ["No visto","Inicial","Básico","Competente","Sólido","Dominado"];
@@ -4152,7 +4150,6 @@ JSON: {"preguntas":[{"texto":"...","tipo":"reflexion"}]}`:""}`;
 
   const iS={width:"100%",background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,padding:"9px 12px",color:C.text,fontSize:12,outline:"none",boxSizing:"border-box",fontFamily:FONT,marginBottom:8};
   const tipoColor={diagnostico:C.info,checkpoint:C.warn,final:C.success};
-  const tipoIcon={diagnostico:"🔍",checkpoint:"📍",final:"🏁"};
 
   return(
     <div>
@@ -4266,7 +4263,6 @@ function EvaluacionCard({ev,post,session,esMio,inscripciones,inscripcion,onDelet
   try{contenido=JSON.parse(ev.contenido_json||"{}");}catch{}
 
   const tipoColor={diagnostico:C.info,checkpoint:C.warn,final:C.success};
-  const tipoIcon={diagnostico:"🔍",checkpoint:"📍",final:"🏁"};
   const skills=getSkills(post.id);
 
   const enviarRespuesta=async()=>{
@@ -5176,7 +5172,7 @@ function CursoPage({post,session,onClose,onUpdatePost}){
             <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}><Tag tipo={post.tipo}/>{post.verificado&&<VerifiedBadge/>}{post.sinc&&<span style={{fontSize:11,background:C.surface,border:`1px solid ${C.border}`,borderRadius:8,padding:"2px 8px",color:C.muted}}>{post.sinc==="sinc"?"Sincrónico":"Asincrónico"}</span>}</div>
             <p style={{color:C.muted,fontSize:13,lineHeight:1.7,marginBottom:post.requisitos?6:12}}>{post.descripcion}</p>
             {post.requisitos&&<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,padding:"8px 12px",marginBottom:12,fontSize:12,color:C.muted}}><span style={{fontWeight:600,color:C.text}}>Requisitos: </span>{post.requisitos}</div>}
-            <div style={{display:"flex",gap:9,flexWrap:"wrap"}}><Chip label="MODALIDAD" val={post.modo==="curso"?"Curso":"Clase particular"}/>{post.modalidad&&<Chip label="FORMATO" val={post.modalidad==="presencial"?"📍 Presencial":post.modalidad==="virtual"?"🌐 Virtual":post.modalidad==="mixto"?"⟳ Mixto":post.modalidad}/>}{duracion&&<Chip label="DURACIÓN" val={duracion}/>}{post.fecha_inicio&&<Chip label="INICIO" val={fmt(post.fecha_inicio)}/>}{post.fecha_fin&&<Chip label="FIN" val={fmt(post.fecha_fin)}/>}</div>
+            <div style={{display:"flex",gap:9,flexWrap:"wrap"}}><Chip label="MODALIDAD" val={post.modo==="curso"?"Curso":"Clase particular"}/>{post.modalidad&&<Chip label="FORMATO" val={post.modalidad==="presencial"?" Presencial":post.modalidad==="virtual"?" Virtual":post.modalidad==="mixto"?" Mixto":post.modalidad}/>}{duracion&&<Chip label="DURACIÓN" val={duracion}/>}{post.fecha_inicio&&<Chip label="INICIO" val={fmt(post.fecha_inicio)}/>}{post.fecha_fin&&<Chip label="FIN" val={fmt(post.fecha_fin)}/>}</div>
           </div>
           {!esMio&&inscripcion&&(<div style={{background:"#4ECB7115",border:`1px solid #4ECB7133`,borderRadius:12,padding:"12px 16px",marginBottom:18}}>
             <div style={{color:C.success,fontWeight:600,fontSize:13}}>✓ Estás inscripto</div>
@@ -5578,7 +5574,7 @@ function StreakBadge({session}){
     <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"#E0955C18",border:"1px solid #E0955C33",borderRadius:20,padding:"4px 12px",marginBottom:10}}>
       <span style={{fontSize:16}}>🔥</span>
       <span style={{fontWeight:700,color:C.warn,fontSize:13}}>{streak} días seguidos</span>
-      <span style={{color:C.muted,fontSize:11}}>en ClasseLink</span>
+      <span style={{color:C.muted,fontSize:11}}>en Luderis</span>
     </div>
   );
 }
@@ -5608,7 +5604,7 @@ function AsistentePublicacion({tipo,materia,titulo,descripcion,modo,session,onAp
           ?`Ya tiene título. Generá una descripción que lo complemente bien.`
           :`Generá un título atractivo y descripción clara para esta publicación.`;
       const raw=await sb.callIA(
-        `Sos un asistente para docentes de una plataforma educativa argentina (ClasseLink).
+        `Sos un asistente para docentes de una plataforma educativa argentina (Luderis).
 ${instruccion}
 SIEMPRE respondé con JSON válido sin markdown:
 {"titulo":"...","descripcion":"...","precio_sugerido":null,"consejos":["...","..."]}
@@ -5755,9 +5751,9 @@ function PostFormModal({session,postToEdit,onClose,onSave}){
             <Label>Modalidad de cursado</Label>
             <select value={modalidadForm} onChange={e=>setModalidadForm(e.target.value)} style={{...iS,marginBottom:0,cursor:"pointer"}}>
               <option value="">No especificada</option>
-              <option value="presencial">📍 Presencial</option>
-              <option value="virtual">🌐 Virtual</option>
-              <option value="mixto">⟳ Mixto</option>
+              <option value="presencial"> Presencial</option>
+              <option value="virtual"> Virtual</option>
+              <option value="mixto"> Mixto</option>
             </select>
           </div>
           <div>
@@ -5819,9 +5815,9 @@ function PostFormModal({session,postToEdit,onClose,onSave}){
             <div style={{background:C.card,padding:"14px 16px"}}>
               <div style={{display:"flex",gap:7,marginBottom:8,flexWrap:"wrap"}}>
                 <Tag tipo={tipo}/>
-                {modalidadForm==="virtual"&&<span style={{fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:20,background:"#4ECB7115",color:C.success,border:"1px solid #4ECB7133"}}>🌐 Virtual</span>}
-                {modalidadForm==="presencial"&&<span style={{fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:20,background:"#5CA8E015",color:C.info,border:"1px solid #5CA8E033"}}>📍 Presencial</span>}
-                {modalidadForm==="mixto"&&<span style={{fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:20,background:"#C85CE015",color:C.purple,border:"1px solid #C85CE033"}}>⟳ Mixto</span>}
+                {modalidadForm==="virtual"&&<span style={{fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:20,background:"#4ECB7115",color:C.success,border:"1px solid #4ECB7133"}}> Virtual</span>}
+                {modalidadForm==="presencial"&&<span style={{fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:20,background:"#5CA8E015",color:C.info,border:"1px solid #5CA8E033"}}> Presencial</span>}
+                {modalidadForm==="mixto"&&<span style={{fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:20,background:"#C85CE015",color:C.purple,border:"1px solid #C85CE033"}}> Mixto</span>}
               </div>
               <div style={{fontWeight:700,color:C.text,fontSize:14,marginBottom:4}}>{titulo||"Sin título"}</div>
               <div style={{color:C.muted,fontSize:12,marginBottom:8,lineHeight:1.5}}>{descripcion?.slice(0,120)}{descripcion?.length>120?"...":""}</div>
@@ -5859,7 +5855,7 @@ function PerfilPage({autorEmail,session,onClose,onOpenDetail}){
   const savedColor=autorEmail?localStorage.getItem("avatarColor_"+autorEmail):null;
   const perfilColor=savedColor||avatarColor(nombre[0]);
   const avg=calcAvg(reseñas);
-  const TIPO_ICON={titulo:"🎓",certificado:"📜",experiencia:"💼",otro:"📄"};
+  const TIPO_ICON={titulo:"",certificado:"",experiencia:"",otro:""};
   return(
     <div style={{position:"fixed",inset:0,background:C.bg,zIndex:400,overflowY:"auto",fontFamily:FONT}}>
       <div style={{position:"sticky",top:0,zIndex:10,background:C.sidebar,borderBottom:`1px solid ${C.border}`,padding:"10px 14px",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
@@ -5953,7 +5949,7 @@ function OnboardingModal({session,onClose}){
   const [materias,setMaterias]=useState([]);
   const toggleM=m=>setMaterias(p=>p.includes(m)?p.filter(x=>x!==m):[...p,m]);
   const steps=[
-    {title:"¡Bienvenido a ClasseLink!",sub:"La plataforma para conectar estudiantes y docentes.",body:(
+    {title:"¡Bienvenido a Luderis!",sub:"La plataforma para conectar estudiantes y docentes.",body:(
       <div style={{display:"flex",flexDirection:"column",gap:10,marginTop:8}}>
         <p style={{color:C.muted,fontSize:13,lineHeight:1.7}}>Podés publicar cursos o clases, buscar docentes para lo que querés aprender, y acordar clases directamente en la plataforma.</p>
         <p style={{color:C.muted,fontSize:13}}>¿Cuál es tu rol principal?</p>
@@ -5980,7 +5976,7 @@ function OnboardingModal({session,onClose}){
         ))}
       </div>
     )},
-    {title:"¡Todo listo!",sub:"Ya podés empezar a explorar ClasseLink.",body:(
+    {title:"¡Todo listo!",sub:"Ya podés empezar a explorar Luderis.",body:(
       <div style={{textAlign:"center",padding:"16px 0"}}>
         <div style={{fontSize:40,marginBottom:12,color:C.accent}}>★</div>
         <p style={{color:C.muted,fontSize:13,lineHeight:1.8}}>
@@ -6545,7 +6541,7 @@ function ContraRespondedor({oferta,session,onActualizado,onVer}){
         const claseData={
           tipo:"oferta",modo:"particular",
           titulo:oferta.busqueda_titulo||"Clase acordada",
-          descripcion:`Clase acordada a través de ClasseLink.`,
+          descripcion:`Clase acordada a través de Luderis.`,
           autor_id:session.user.id,
           activo:false,
           precio:oferta.precio||oferta.contraoferta_precio,
@@ -6739,7 +6735,7 @@ function MiCuentaPage({session,onOpenDetail,onOpenCurso,onEdit,onNew,onOpenChat,
   const removeDoc=async(id)=>{try{await sb.deleteDocumento(id,session.access_token);await cargar();}catch(e){alert(e.message);}};
   const saveColor=(c)=>{localStorage.setItem("avatarColor_"+email,c);setAvatarColor2(c);};
   const TIPOS_DOC=[{v:"titulo",l:"Título"},{v:"certificado",l:"Certificado"},{v:"experiencia",l:"Experiencia"},{v:"otro",l:"Otro"}];
-  const TIPO_ICON={titulo:"🎓",certificado:"📜",experiencia:"💼",otro:"📄"};
+  const TIPO_ICON={titulo:"",certificado:"",experiencia:"",otro:""};
   const iS={width:"100%",background:C.card,border:`1px solid ${C.border}`,borderRadius:9,padding:"9px 12px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box",marginBottom:9,fontFamily:FONT};
   const ofertas=pubs.filter(p=>p.tipo==="oferta");
   const busquedas=pubs.filter(p=>p.tipo==="busqueda");
@@ -7185,7 +7181,7 @@ function AcuerdoModal({oferta,session,onClose,onConfirmado}){
               <div style={{color:C.muted,fontSize:10,fontWeight:700,letterSpacing:1,marginBottom:4}}>NOTAS</div>
               <p style={{color:C.muted,fontSize:12,margin:0,lineHeight:1.5}}>{oferta.notas_acuerdo}</p>
             </div>}
-            <div style={{textAlign:"center",fontSize:11,color:C.muted,marginTop:4}}>Este acuerdo fue generado dentro de ClasseLink y no tiene valor legal externo.</div>
+            <div style={{textAlign:"center",fontSize:11,color:C.muted,marginTop:4}}>Este acuerdo fue generado dentro de Luderis y no tiene valor legal externo.</div>
           </div>
         ):(
           /* Formulario de creación */
@@ -7214,7 +7210,7 @@ function AcuerdoModal({oferta,session,onClose,onConfirmado}){
             <div style={{color:C.muted,fontSize:11,fontWeight:600,letterSpacing:1,marginBottom:5,textTransform:"uppercase"}}>Notas adicionales (opcional)</div>
             <textarea value={notas} onChange={e=>setNotas(e.target.value.slice(0,400))} placeholder="Horarios acordados, condiciones especiales, etc." style={{...iS,minHeight:65,resize:"vertical"}}/>
             <div style={{background:C.accentDim,border:`1px solid ${C.accent}33`,borderRadius:10,padding:"10px 13px",marginBottom:14,fontSize:11,color:C.muted,lineHeight:1.6}}>
-              Al confirmar, ambas partes quedan registradas en ClasseLink. Esto no tiene valor legal externo pero sirve como constancia dentro de la plataforma.
+              Al confirmar, ambas partes quedan registradas en Luderis. Esto no tiene valor legal externo pero sirve como constancia dentro de la plataforma.
             </div>
             <div style={{display:"flex",gap:8}}>
               <Btn onClick={guardar} disabled={saving} style={{flex:1,padding:"11px",fontSize:14}}>
@@ -7231,7 +7227,7 @@ function AcuerdoModal({oferta,session,onClose,onConfirmado}){
 
 // ─── CHATBOT WIDGET — flotante abajo a la derecha ──────────────────────────────
 function ChatBotWidget(){
-  const [open,setOpen]=useState(false);const [msgs,setMsgs]=useState([{from:"bot",text:"¡Hola! 👋 Soy el asistente de ClasseLink. ¿En qué puedo ayudarte?"}]);
+  const [open,setOpen]=useState(false);const [msgs,setMsgs]=useState([{from:"bot",text:"¡Hola! 👋 Soy Ludy, tu asistente virtual. ¿En qué puedo ayudarte?"}]);
   const [input,setInput]=useState("");const [loading,setLoading]=useState(false);
   const endRef=useRef(null);
   useEffect(()=>{if(open)endRef.current?.scrollIntoView({behavior:"smooth"});},[msgs,open]);
@@ -7250,7 +7246,7 @@ function ChatBotWidget(){
     {q:"¿Cómo funciona el chat grupal?",a:"Cada curso tiene un chat grupal visible para todos los inscriptos y el docente. Aparece dentro de la página del curso, abajo del contenido. El docente puede designar ayudantes que también tienen acceso especial.",tags:["grupal","grupo","chat curso","todos","ayudante"]},
     {q:"¿Cómo cierro las inscripciones?",a:"Desde la página de tu curso (Mi cuenta → Contenido), usá el botón naranja 'Cerrar inscripciones' en la barra superior. Los alumnos ya inscriptos mantienen su acceso.",tags:["cerrar inscripciones","cupo","no más inscrib"]},
     {q:"¿Cómo agrego a un ayudante?",a:"Dentro de la página del curso, en el panel 'Alumnos', hay una sección 'Ayudantes'. Ingresá el ID del usuario (lo encuentra en su Mi cuenta → Editar perfil) y agregalo. Tendrá acceso de edición y color especial en el chat.",tags:["ayudante","asistente","colaborad","agregar ayud"]},
-    {q:"¿Hay costo por usar ClasseLink?",a:"ClasseLink es gratuito para alumnos y docentes. El precio lo fija cada docente en su publicación y lo arreglan directamente.",tags:["costo","gratis","precio","pago","cobro","cuánto"]},
+    {q:"¿Hay costo por usar Luderis?",a:"Luderis es gratuito para alumnos y docentes. El precio lo fija cada docente en su publicación y lo arreglan directamente.",tags:["costo","gratis","precio","pago","cobro","cuánto"]},
   ];
   // Matching mejorado: busca por tags y keywords
   const matchFaq=(q)=>{
@@ -7288,7 +7284,7 @@ function ChatBotWidget(){
     if(faq){setTimeout(()=>{setMsgs(prev=>[...prev,{from:"bot",text:faq.a}]);setLoading(false);},600);return;}
     // Use AI
     try{
-      const SYSTEM_CHATBOT=`Sos el asistente de soporte de ClasseLink, una plataforma educativa argentina que conecta docentes y estudiantes.
+      const SYSTEM_CHATBOT=`Sos el asistente de soporte de Luderis, una plataforma educativa argentina que conecta docentes y estudiantes.
 
 FUNCIONES PRINCIPALES:
 - Explorar: ver publicaciones de clases y búsquedas. Botón ✦ IA para búsqueda inteligente.
@@ -7303,7 +7299,7 @@ FUNCIONES PRINCIPALES:
 - Mi cuenta: gestionar publicaciones, ver estadísticas, editar perfil y bio.
 - Modo oscuro/claro: Mi cuenta → Editar perfil → botones Tema.
 
-Respondé en español, de forma breve y amable. Si no podés resolver el problema en 2 intentos, sugerí contactar al soporte por WhatsApp.`;
+Respondé en español, de forma breve y amable. Si no podés resolver el problema en 4 intentos, sugerí contactar al soporte por WhatsApp.`;
       const text=await sb.callIA(SYSTEM_CHATBOT,q,350,"").catch(()=>"Lo siento, el asistente no está disponible en este momento.");
       // Mostrar siempre la opción de contacto humano junto a la respuesta de IA
       setMsgs(prev=>[...prev,{from:"bot",text:text},{from:"bot",text:"¿Necesitás ayuda de una persona?",action:true}]);
@@ -7311,7 +7307,7 @@ Respondé en español, de forma breve y amable. Si no podés resolver el problem
       setMsgs(prev=>[...prev,{from:"bot",text:"Lo siento, no pude procesar tu consulta en este momento."},{from:"bot",text:"Podés hablar con un representante:",action:true}]);
     }finally{setLoading(false);}
   };
-  const openWhatsApp=()=>window.open("https://wa.me/5492345459787?text=Hola,%20necesito%20ayuda%20con%20ClasseLink","_blank");
+  const openWhatsApp=()=>window.open("https://wa.me/5492345459787?text=Hola,%20necesito%20ayuda%20con%20Luderis","_blank");
   return(
     <div style={{position:"fixed",bottom:22,right:22,zIndex:500,fontFamily:FONT}}>
       {open&&(
@@ -7320,7 +7316,7 @@ Respondé en español, de forma breve y amable. Si no podés resolver el problem
           <div style={{background:C.accent,borderRadius:"20px 20px 0 0",padding:"14px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <div style={{display:"flex",alignItems:"center",gap:9}}>
               <span style={{fontSize:20}}>🎓</span>
-              <div><div style={{fontWeight:700,color:"#fff",fontSize:13}}>Soporte ClasseLink</div><div style={{fontSize:11,color:"rgba(255,255,255,.7)"}}>Responde al instante</div></div>
+              <div><div style={{fontWeight:700,color:"#fff",fontSize:13}}>Soporte Luderis</div><div style={{fontSize:11,color:"rgba(255,255,255,.7)"}}>Responde al instante</div></div>
             </div>
             <button onClick={()=>setOpen(false)} style={{background:"none",border:"none",color:"#fff",fontSize:18,cursor:"pointer"}}>×</button>
           </div>
@@ -7424,8 +7420,8 @@ export default function App(){
     document.addEventListener("visibilitychange",onVisibility);
     return()=>{clearInterval(t);document.removeEventListener("visibilitychange",onVisibility);};
   },[refreshUnread]);
-  const PAGE_TITLES={explore:"Explorar — ClasseLink",chats:"Mis chats — ClasseLink",favoritos:"Favoritos — ClasseLink",inscripciones:"Mis clases — ClasseLink",cuenta:"Mi cuenta — ClasseLink"};
-  useEffect(()=>{document.title=PAGE_TITLES[page]||"ClasseLink";},[page]);// eslint-disable-line
+  const PAGE_TITLES={explore:"Explorar — Luderis",chats:"Mis chats — Luderis",favoritos:"Favoritos — Luderis",inscripciones:"Mis clases — Luderis",cuenta:"Mi cuenta — Luderis"};
+  useEffect(()=>{document.title=PAGE_TITLES[page]||"Luderis";},[page]);// eslint-disable-line
   const logout=()=>{sb.clearSession();setSession(null);};
   const openChat=(p)=>{chatPostRef.current=p;setChatPost(p);};
   const closeChat=()=>{chatPostRef.current=null;setChatPost(null);refreshUnread();setChatsKey(k=>k+1);};
