@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+
+    <!-- Viewport: sin zoom en iOS, sin scroll horizontal -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+
+    <!-- PWA / Mobile -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Luderis" />
+
+    <!-- SEO -->
+    <meta name="theme-color" content="#1A6ED8" />
+    <meta name="description" content="Luderis — Plataforma educativa argentina. Encontrá clases particulares, cursos y docentes. Aprendé lo que quieras, enseñá lo que sabés." />
+    <meta name="keywords" content="clases particulares, cursos online, docentes, educación, argentina, aprender" />
+    <meta name="author" content="Luderis" />
+
+    <!-- Open Graph (WhatsApp, Facebook, LinkedIn) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Luderis — Aprendé lo que quieras" />
+    <meta property="og:description" content="Conectá con docentes y alumnos. Clases particulares, cursos online y presenciales en toda Argentina." />
+    <meta property="og:image" content="%PUBLIC_URL%/logo512.png" />
+    <meta property="og:url" content="https://luderis.com" />
+    <meta property="og:locale" content="es_AR" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Luderis — Aprendé lo que quieras" />
+    <meta name="twitter:description" content="Conectá con docentes y alumnos en Argentina." />
+    <meta name="twitter:image" content="%PUBLIC_URL%/logo512.png" />
+
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+    <title>Luderis</title>
+
+    <style>
+      /* Evitar flash blanco al cargar */
+      html, body, #root {
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        background: #F6F9FF;
+      }
+      /* Evitar scroll horizontal global */
+      html {
+        overflow-x: hidden;
+      }
+      /* Scrollbar discreta en Chrome */
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #DDE5F5; border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: #1A6ED840; }
+    </style>
+  </head>
+  <body>
+    <noscript>Para usar Luderis necesitás JavaScript habilitado en tu navegador.</noscript>
+    <div id="root"></div>
+  </body>
+</html>
