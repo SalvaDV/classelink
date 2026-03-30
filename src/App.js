@@ -2528,7 +2528,8 @@ export default function App(){
             setOfertasAceptadasNuevas(0);
             setOfertasCount(0);
             sb.marcarNotifsTipoLeidas(session.user.email,["oferta_aceptada","oferta_rechazada","contraoferta","nueva_oferta","nueva_inscripcion"],session.access_token).then(refreshUnread).catch(()=>{});
-          }}/>}</React.Suspense>
+          }}/>
+          </React.Suspense>}
         </div>
       </main>
       {chatPost&&<ChatModal post={chatPost} session={session} onClose={closeChat} onUnreadChange={refreshUnread}/>}
@@ -2542,7 +2543,8 @@ export default function App(){
       // Abrir CursoPage directo en tab validación
       setTimeout(()=>setCursoPost({...newPub,_openValidacion:true}),200);
     }
-  }}/></React.Suspense>}
+  }}/>
+      </React.Suspense>}
       {showOnboarding&&session&&<React.Suspense fallback={<div style={{position:"fixed",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.5)",zIndex:200}}><div style={{background:C.surface,borderRadius:16,padding:"32px 48px",color:C.text,fontFamily:FONT,fontSize:14}}>Cargando…</div></div>}><OnboardingModal session={session} onClose={()=>setShowOnboarding(false)}/></React.Suspense>}
       <ScrollToTopBtn/>
       <ChatBotWidget/>
