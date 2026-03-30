@@ -328,3 +328,27 @@ export const LUD={
   grad:"linear-gradient(135deg,#1A6ED8 0%,#2EC4A0 100%)",
   gradDark:"linear-gradient(135deg,#0F3F7A 0%,#1A6ED8 60%,#2EC4A0 100%)",
 };
+
+// ─── MP RETORNO HOOK ──────────────────────────────────────────────────────────
+// Maneja el retorno de MercadoPago (?mp=success|pending|failure)
+// Se ubica en shared porque App.js lo necesita al cargar, antes de que CursoPage sea lazy-loaded
+export function useMPRetorno(onSuccess){
+  useEffect(()=>{
+    const params=new URLSearchParams(window.location.search);
+    const mp=params.get("mp");
+    if(!mp)return;
+    const url=new URL(window.location.href);
+    url.searchParams.delete("mp");
+    url.searchParams.delete("pub");
+    window.history.replaceState({},"",url.toString());
+    if(mp==="success"){
+      toast("¡Pago aprobado! Ya tenés acceso a la clase 🎉","success",6000);
+      try{const p=JSON.parse(localStorage.getItem("mp_pending")||"{}");if(p.pub_id)onSuccess(p.pub_id);}catch{}
+      try{localStorage.removeItem("mp_pending");}catch{}
+    }else if(mp==="pending"){
+      toast("El pago está siendo procesado. Te avisaremos cuando se confirme.","info",6000);
+    }else if(mp==="failure"){
+      toast("El pago no pudo completarse. Podés intentar de nuevo.","error",5000);
+    }
+  },[]);// eslint-disable-line
+}
