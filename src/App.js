@@ -581,7 +581,7 @@ function EmptyResultsWithAlerta({busqueda,filtroMateria,filtroModalidad,session,
       let criterios={};
       try{
         const raw=await sb.callIA(
-          "Extraé criterios de búsqueda educativa. Respondé SOLO con JSON: {"materia":"...","palabras_clave":[...],"resumen":"..."}",
+          "Extraé criterios de búsqueda educativa. Respondé SOLO con JSON: {\"materia\":\"...\",\"palabras_clave\":[...],\"resumen\":\"...\"}",
           `El usuario busca: "${textoAlerta}"`,
           100,session.access_token
         );
