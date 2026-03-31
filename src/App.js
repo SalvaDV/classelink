@@ -2493,6 +2493,26 @@ export default function App(){
     window.addEventListener("focus",syncRol);
     return()=>window.removeEventListener("focus",syncRol);
   },[session]);
+  // Handle Google OAuth callback — tokens come back in URL hash
+  useEffect(()=>{
+    if(!window.location.hash.includes("access_token"))return;
+    sb.getSessionFromUrl().then(async s=>{
+      if(!s)return;
+      window.location.hash="";
+      sb.saveSession(s);
+      try{
+        await sb.upsertUsuario({
+          id:s.user.id,email:s.user.email,
+          nombre:s.user.user_metadata?.full_name||s.user.email.split("@")[0],
+          avatar_url:s.user.user_metadata?.avatar_url||null,
+        },s.access_token);
+        const nombre=s.user.user_metadata?.full_name||s.user.email.split("@")[0];
+        try{localStorage.setItem("dn_"+s.user.email,nombre);}catch{}
+      }catch{}
+      setSession(s);
+    }).catch(()=>{});
+  },[]);// eslint-disable-line
+
   useEffect(()=>{sb.setSessionRefreshCallback(async()=>{const c=sessionRef.current;if(!c?.refresh_token)return null;try{const s=await sb.refreshSession(c.refresh_token);sb.saveSession(s);setSession(s);return s;}catch{sb.clearSession();setSession(null);return null;}});},[]);
   const chatPostRef=useRef(null);
   const refreshUnread=useCallback(()=>{
