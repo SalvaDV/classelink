@@ -2192,6 +2192,7 @@ function NotifPanel({session,open,onClose,onOpenDetail,onOpenCurso}){
     valorar_curso:{icon:"⭐",color:"#F59E0B",label:"Valorar curso"},
     alerta_publicacion:{icon:"🔔",color:"#1A6ED8",label:"Alerta de búsqueda"},
     pago_aprobado_mp:{icon:"💳",color:"#009EE3",label:"Pago aprobado"},
+    sistema:{icon:"📣",color:"#7B3FBE",label:"Anuncio de Luderis"},
   };
 
   const tabs=[
@@ -2497,7 +2498,7 @@ export default function App(){
       const notifsInsc=(nfs||[]).filter(n=>["valorar_curso","nuevo_ayudante","busqueda_acordada","nuevo_contenido"].includes(n.tipo));
       setNotifCount(notifsInsc.length);setNotifs(nfs||[]);
       // Badge Mi Cuenta: notifs de ofertas/contras/inscripciones recibidas
-      const notifsCuenta=(nfs||[]).filter(n=>["oferta_aceptada","oferta_rechazada","contraoferta","nueva_oferta","nueva_inscripcion"].includes(n.tipo));
+      const notifsCuenta=(nfs||[]).filter(n=>["oferta_aceptada","oferta_rechazada","contraoferta","nueva_oferta","nueva_inscripcion","sistema"].includes(n.tipo));
       setOfertasAceptadasNuevas(notifsCuenta.length);
     }).catch(()=>{});
   },[session]);
