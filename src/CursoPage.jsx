@@ -3835,25 +3835,29 @@ function InscripcionModal({post,session,onClose,onDone}){
       sb.insertNotificacion({usuario_id:null,alumno_email:post.autor_email,tipo:"nueva_inscripcion",publicacion_id:post.id,pub_titulo:post.titulo,leida:false},session.access_token).catch(()=>{});
       const alumnoNombre=sb.getDisplayName(session.user.email)||session.user.email.split("@")[0];
       sb.sendEmail("nueva_inscripcion",post.autor_email,{pub_titulo:post.titulo,alumno_nombre:alumnoNombre},session.access_token).catch(()=>{});
-      const paqueteInfo=paqueteElegido?`${paqueteElegido.nombre||paqueteElegido.clases+" clases"}`:null;
+      // Info del mail según lo que eligió
+      const esPruebaLocal=metodoElegido==="prueba";
+      const paqueteInfo=paqueteElegido&&!esPruebaLocal?`${paqueteElegido.nombre||paqueteElegido.clases+" clases"}`:null;
+      const precioMail=esPruebaLocal?(parseFloat(post.precio_prueba)||0):precioEfectivo;
+      const clasesCount=paqueteElegido&&!esPruebaLocal?(paqueteElegido.clases||1):1;
       // Email al alumno
       sb.sendEmail("comprobante_inscripcion",session.user.email,{
         pub_titulo:post.titulo,
         docente_nombre:post.autor_nombre||post.autor_email.split("@")[0],
         modalidad:post.modalidad||"",
-        precio:precioEfectivo,
+        precio:precioMail,
         moneda:post.moneda||"ARS",
-        paquete:paqueteInfo,
-        clases:paqueteElegido?.clases||1,
+        paquete:esPruebaLocal?"Clase de prueba":paqueteInfo,
+        clases:clasesCount,
       },session.access_token).catch(()=>{});
       // Email al docente
       sb.sendEmail("nueva_inscripcion",post.autor_email,{
         pub_titulo:post.titulo,
         alumno_nombre:session.user.email.split("@")[0],
-        precio:precioEfectivo,
+        precio:precioMail,
         moneda:post.moneda||"ARS",
-        paquete:paqueteInfo,
-        clases:paqueteElegido?.clases||1,
+        paquete:esPruebaLocal?"Clase de prueba":paqueteInfo,
+        clases:clasesCount,
       },session.access_token).catch(()=>{});
       toast("¡Inscripción exitosa! Ya tenés acceso","success",4000);
       setTimeout(()=>{onClose();onDone();},700);
@@ -3864,8 +3868,59 @@ function InscripcionModal({post,session,onClose,onDone}){
   };
 
 
-  // Si no hay paquetes, saltar directo al paso 2
-  React.useEffect(()=>{if(paquetesDisp.length===0)setPaso(2);},[paquetesDisp]);
+
+  // ── Selección unificada: qué comprar ──────────────────────────────────────
+  // opcion: null | "clase" | "paquete_N" | "prueba"
+  const [opcion, setOpcion] = useState(null);
+
+  // Derivar paquete elegido y precio efectivo desde opcion
+  const paqueteElegido = React.useMemo(()=>{
+    if(!opcion||!opcion.startsWith("paquete_"))return null;
+    const clases=parseInt(opcion.split("_")[1]);
+    return paquetesDisp.find(p=>p.clases===clases)||null;
+  },[opcion,paquetesDisp]);
+
+  const esPrueba = opcion==="prueba";
+
+  const precioEfectivo = React.useMemo(()=>{
+    if(esPrueba) return parseFloat(post.precio_prueba)||0;
+    if(paqueteElegido){
+      const pt=parseFloat(paqueteElegido.precio_total)||0;
+      const desc=parseFloat(paqueteElegido.descuento)||0;
+      if(pt>0)return pt;
+      if(desc>0)return Math.round(precioBase*(paqueteElegido.clases||1)*(1-desc/100));
+      return precioBase*(paqueteElegido.clases||1);
+    }
+    return precioBase;
+  },[esPrueba,paqueteElegido,precioBase,post.precio_prueba]);
+
+  const precioLabel = React.useMemo(()=>{
+    if(esPrueba){
+      const pp=parseFloat(post.precio_prueba)||0;
+      return pp>0?`${post.moneda||"ARS"} $${pp.toLocaleString("es-AR")} (prueba)`:"Gratis (prueba)";
+    }
+    if(paqueteElegido) return `${post.moneda||"ARS"} $${precioEfectivo.toLocaleString("es-AR")} (${paqueteElegido.clases} clases)`;
+    return tienePrecio?`${post.moneda||"ARS"} $${precioBase.toLocaleString("es-AR")}`:"Gratis";
+  },[esPrueba,paqueteElegido,precioEfectivo,precioBase,tienePrecio,post]);
+
+  // Ir a pago solo si hay precio; si es gratis inscribir directo
+  const continuarAlPago = () => {
+    if(!opcion){return;}
+    const gratis=(esPrueba&&!(parseFloat(post.precio_prueba)>0))||(!tienePrecio&&!esPrueba);
+    if(gratis){
+      inscribirDirecto(esPrueba?"prueba":"gratis");
+    }else{
+      setPaso(2);
+    }
+  };
+
+  // Si no hay paquetes ni prueba, skip paso 1
+  React.useEffect(()=>{
+    if(paquetesDisp.length===0&&!post.tiene_prueba){
+      setOpcion("clase");
+      setPaso(2);
+    }
+  },[paquetesDisp,post.tiene_prueba]);
 
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px",fontFamily:FONT}} onClick={onClose}>
@@ -3873,85 +3928,107 @@ function InscripcionModal({post,session,onClose,onDone}){
 
         {/* Header */}
         <div style={{padding:"20px 22px 16px",borderBottom:`1px solid ${C.border}`}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
             <div>
               <h3 style={{margin:0,color:C.text,fontSize:17,fontWeight:700}}>
-                {paso===1?"Elegí tu paquete":"Elegí cómo pagar"}
+                {paso===1?"Inscribirse":"Elegí cómo pagar"}
               </h3>
               <div style={{color:C.muted,fontSize:12,marginTop:2}}>{post.titulo}</div>
             </div>
             <button onClick={onClose} style={{background:"none",border:"none",color:C.muted,fontSize:22,cursor:"pointer",padding:"0 4px",lineHeight:1}}>×</button>
           </div>
           {/* Precio seleccionado */}
-          <div style={{background:C.bg,borderRadius:10,padding:"10px 14px",marginTop:12,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <span style={{color:C.muted,fontSize:13}}>{paqueteElegido?`${paqueteElegido.nombre||paqueteElegido.clases+" clases"}`:"Precio por clase"}</span>
-            <div style={{textAlign:"right"}}>
-              <div style={{color:C.accent,fontWeight:800,fontSize:18}}>{precio}</div>
-              {paqueteElegido&&<div style={{fontSize:11,color:C.success,fontWeight:600}}>${Math.round(precioEfectivo/paqueteElegido.clases).toLocaleString("es-AR")}/clase · ahorrás ${(parseFloat(post.precio)*paqueteElegido.clases-precioEfectivo).toLocaleString("es-AR")}</div>}
+          {opcion&&(
+            <div style={{background:C.bg,borderRadius:10,padding:"10px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <span style={{color:C.muted,fontSize:13}}>
+                {esPrueba?"Clase de prueba":paqueteElegido?`${paqueteElegido.nombre||paqueteElegido.clases+" clases"}`:"1 clase"}
+              </span>
+              <span style={{color:C.accent,fontWeight:800,fontSize:16}}>{precioLabel}</span>
             </div>
-          </div>
+          )}
         </div>
 
         <div style={{padding:"16px 22px 22px",display:"flex",flexDirection:"column",gap:10}}>
 
-          {/* ── PASO 1: Elegir cantidad ── */}
+          {/* ── PASO 1: Qué comprar ── */}
           {paso===1&&(
             <>
-              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              <div style={{display:"flex",flexDirection:"column",gap:7}}>
+
                 {/* 1 clase */}
-                <button onClick={()=>setPaqueteElegido(null)}
-                  style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 14px",borderRadius:10,border:`2px solid ${!paqueteElegido?C.accent:C.border}`,background:!paqueteElegido?C.accentDim:C.bg,cursor:"pointer",fontFamily:FONT,transition:"all .15s",textAlign:"left"}}>
+                <button onClick={()=>setOpcion("clase")}
+                  style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",borderRadius:10,border:`2px solid ${opcion==="clase"?C.accent:C.border}`,background:opcion==="clase"?C.accentDim:C.bg,cursor:"pointer",fontFamily:FONT,transition:"all .15s",textAlign:"left"}}>
                   <div>
-                    <div style={{fontSize:13,fontWeight:700,color:!paqueteElegido?C.accent:C.text}}>1 clase</div>
+                    <div style={{fontSize:13,fontWeight:700,color:opcion==="clase"?C.accent:C.text}}>1 clase</div>
                     <div style={{fontSize:11,color:C.muted}}>Precio estándar</div>
                   </div>
-                  <div style={{fontWeight:800,fontSize:14,color:!paqueteElegido?C.accent:C.text}}>{post.moneda||"ARS"} ${Number(post.precio).toLocaleString("es-AR")}</div>
+                  <div style={{fontWeight:800,fontSize:14,color:opcion==="clase"?C.accent:C.text}}>
+                    {tienePrecio?`${post.moneda||"ARS"} $${precioBase.toLocaleString("es-AR")}`:"Gratis"}
+                  </div>
                 </button>
+
                 {/* Paquetes */}
                 {paquetesDisp.map((pq,i)=>{
-                  const base=parseFloat(post.precio)||0;
-                  const ptVal=parseFloat(pq.precio_total)||0;
-                  const total=ptVal>0?ptVal:Math.round(base*(pq.clases||1)*(1-(pq.descuento||0)/100));
-                  const porClase=Math.round(total/pq.clases);
-                  const activo=paqueteElegido?.clases===pq.clases;
+                  const pt=parseFloat(pq.precio_total)||0;
+                  const desc=parseFloat(pq.descuento)||0;
+                  const total=pt>0?pt:(desc>0?Math.round(precioBase*(pq.clases||1)*(1-desc/100)):precioBase*(pq.clases||1));
+                  const porClase=Math.round(total/(pq.clases||1));
+                  const key=`paquete_${pq.clases}`;
+                  const activo=opcion===key;
                   return(
-                    <button key={i} onClick={()=>setPaqueteElegido(pq)}
-                      style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 14px",borderRadius:10,border:`2px solid ${activo?C.success:C.border}`,background:activo?C.success+"12":C.bg,cursor:"pointer",fontFamily:FONT,transition:"all .15s",textAlign:"left"}}>
+                    <button key={i} onClick={()=>setOpcion(key)}
+                      style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",borderRadius:10,border:`2px solid ${activo?C.success:C.border}`,background:activo?C.success+"12":C.bg,cursor:"pointer",fontFamily:FONT,transition:"all .15s",textAlign:"left"}}>
                       <div>
                         <div style={{fontSize:13,fontWeight:700,color:activo?C.success:C.text}}>
                           {pq.nombre||`${pq.clases} clases`}
-                          {pq.descuento>0&&<span style={{marginLeft:7,fontSize:10,background:C.success+"25",color:C.success,borderRadius:20,padding:"2px 7px",fontWeight:700}}>-{pq.descuento}%</span>}
+                          {desc>0&&<span style={{marginLeft:7,fontSize:10,background:C.success+"25",color:C.success,borderRadius:20,padding:"2px 7px",fontWeight:700}}>-{desc}%</span>}
                         </div>
                         <div style={{fontSize:11,color:C.muted}}>${porClase.toLocaleString("es-AR")}/clase</div>
                       </div>
                       <div style={{textAlign:"right"}}>
                         <div style={{fontWeight:800,fontSize:14,color:activo?C.success:C.text}}>{post.moneda||"ARS"} ${total.toLocaleString("es-AR")}</div>
-                        {pq.descuento>0&&<div style={{fontSize:10,color:C.muted,textDecoration:"line-through"}}>${(base*pq.clases).toLocaleString("es-AR")}</div>}
+                        {desc>0&&<div style={{fontSize:10,color:C.muted,textDecoration:"line-through"}}>${(precioBase*(pq.clases||1)).toLocaleString("es-AR")}</div>}
                       </div>
                     </button>
                   );
                 })}
+
+                {/* Clase de prueba */}
+                {post.tiene_prueba&&(
+                  <button onClick={()=>setOpcion("prueba")}
+                    style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",borderRadius:10,border:`2px solid ${opcion==="prueba"?"#2EC4A0":C.border}`,background:opcion==="prueba"?"#2EC4A012":C.bg,cursor:"pointer",fontFamily:FONT,transition:"all .15s",textAlign:"left"}}>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:700,color:opcion==="prueba"?"#0F6E56":C.text}}>🎓 Clase de prueba</div>
+                      <div style={{fontSize:11,color:C.muted}}>
+                        {parseFloat(post.precio_prueba)>0?`Precio especial · ${post.moneda||"ARS"} $${Number(post.precio_prueba).toLocaleString("es-AR")}`:"Sin compromiso · primera clase gratis"}
+                      </div>
+                    </div>
+                    <div style={{fontWeight:800,fontSize:14,color:opcion==="prueba"?"#0F6E56":C.text}}>
+                      {parseFloat(post.precio_prueba)>0?`${post.moneda||"ARS"} $${Number(post.precio_prueba).toLocaleString("es-AR")}`:"Gratis"}
+                    </div>
+                  </button>
+                )}
+
               </div>
-              <button onClick={()=>setPaso(2)}
-                style={{background:"linear-gradient(135deg,#1A6ED8,#2EC4A0)",border:"none",borderRadius:12,color:"#fff",padding:"13px",fontWeight:700,fontSize:15,cursor:"pointer",fontFamily:FONT,marginTop:4}}>
-                Continuar →
+
+              <button onClick={continuarAlPago} disabled={!opcion}
+                style={{background:opcion?"linear-gradient(135deg,#1A6ED8,#2EC4A0)":C.border,border:"none",borderRadius:12,color:opcion?"#fff":C.muted,padding:"13px",fontWeight:700,fontSize:15,cursor:opcion?"pointer":"default",fontFamily:FONT,marginTop:4,transition:"all .2s"}}>
+                {opcion?(esPrueba&&!(parseFloat(post.precio_prueba)>0))?"Inscribirme gratis →":"Continuar →":"Elegí una opción"}
               </button>
             </>
           )}
 
-          {/* ── PASO 2: Elegir pago ── */}
+          {/* ── PASO 2: Cómo pagar ── */}
           {paso===2&&(
             <>
-              {paquetesDisp.length>0&&(
-                <button onClick={()=>{setPaso(1);setMetodo(null);}}
-                  style={{background:"none",border:"none",color:C.muted,fontSize:13,cursor:"pointer",fontFamily:FONT,textAlign:"left",padding:"0 0 4px",display:"flex",alignItems:"center",gap:4}}>
-                  ← Cambiar cantidad
-                </button>
-              )}
+              <button onClick={()=>setPaso(1)}
+                style={{background:"none",border:"none",color:C.muted,fontSize:13,cursor:"pointer",fontFamily:FONT,textAlign:"left",padding:"0 0 4px",display:"flex",alignItems:"center",gap:4}}>
+                ← Cambiar opción
+              </button>
 
-              {!metodo?(
+              {!metodo&&(
                 <>
-                  {tienePrecio&&(
+                  {(tienePrecio||esPrueba)&&(
                     <button onClick={()=>setMetodo("mp")}
                       style={{background:"linear-gradient(135deg,#009EE3,#0070BA)",border:"none",borderRadius:14,color:"#fff",padding:"14px 18px",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:FONT,display:"flex",alignItems:"center",gap:12,textAlign:"left",boxShadow:"0 4px 14px rgba(0,158,227,.25)"}}>
                       <span style={{fontSize:22}}>💳</span>
@@ -3961,23 +4038,13 @@ function InscripcionModal({post,session,onClose,onDone}){
                       </div>
                     </button>
                   )}
-                  {tienePrecio&&(post.moneda==="USD"||post.moneda==="EUR")&&(
+                  {(tienePrecio||esPrueba)&&(post.moneda==="USD"||post.moneda==="EUR")&&(
                     <button onClick={()=>setMetodo("stripe")}
                       style={{background:"linear-gradient(135deg,#635BFF,#7C3AED)",border:"none",borderRadius:14,color:"#fff",padding:"14px 18px",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:FONT,display:"flex",alignItems:"center",gap:12,textAlign:"left",boxShadow:"0 4px 14px rgba(99,91,255,.25)"}}>
                       <span style={{fontSize:22}}>💳</span>
                       <div>
-                        <div style={{fontWeight:700}}>Tarjeta de crédito / débito</div>
+                        <div style={{fontWeight:700}}>Tarjeta crédito / débito</div>
                         <div style={{fontWeight:400,fontSize:11,opacity:.85}}>Pago internacional · USD / EUR</div>
-                      </div>
-                    </button>
-                  )}
-                  {post.tiene_prueba&&(
-                    <button onClick={()=>inscribirDirecto("prueba")}
-                      style={{background:"linear-gradient(135deg,#2EC4A0,#0F6E56)",border:"none",borderRadius:14,color:"#fff",padding:"14px 18px",fontWeight:600,fontSize:14,cursor:"pointer",fontFamily:FONT,display:"flex",alignItems:"center",gap:12,textAlign:"left",boxShadow:"0 4px 14px rgba(46,196,160,.25)"}}>
-                      <span style={{fontSize:22}}>🎓</span>
-                      <div>
-                        <div style={{fontWeight:700}}>Clase de prueba</div>
-                        <div style={{fontWeight:400,fontSize:11,opacity:.85}}>{post.precio_prueba&&Number(post.precio_prueba)>0?`${post.moneda||"ARS"} $${Number(post.precio_prueba).toLocaleString("es-AR")} · Precio especial`:"Gratis · Sin compromiso"}</div>
                       </div>
                     </button>
                   )}
@@ -3985,13 +4052,13 @@ function InscripcionModal({post,session,onClose,onDone}){
                     style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:14,color:C.text,padding:"14px 18px",fontWeight:600,fontSize:14,cursor:"pointer",fontFamily:FONT,display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
                     <span style={{fontSize:22}}>🤝</span>
                     <div>
-                      <div>{tienePrecio?"Coordinar con el docente":"Inscribirme gratis"}</div>
-                      <div style={{fontWeight:400,fontSize:11,color:C.accent+"CC"}}>{tienePrecio?"Sin pago online · El docente te contactará":"Sin costo · Acceso inmediato"}</div>
+                      <div>Coordinar con el docente</div>
+                      <div style={{fontWeight:400,fontSize:11,color:C.muted}}>Sin pago online · El docente te contactará</div>
                     </div>
                   </button>
                 </>
-              ):null}
-              {metodo==="mp"&&<MPCheckoutBtn post={post} session={session} onInscripcionOk={()=>{onClose();onDone();}} precioOverride={precioEfectivo} cantidadOverride={paqueteElegido?.clases||1} paqueteNombre={paqueteElegido?paqueteElegido.nombre||`${paqueteElegido.clases} clases`:null}/>}
+              )}
+              {metodo==="mp"&&<MPCheckoutBtn post={post} session={session} onInscripcionOk={()=>{onClose();onDone();}} precioOverride={precioEfectivo} cantidadOverride={paqueteElegido?.clases||1} paqueteNombre={paqueteElegido?paqueteElegido.nombre||`${paqueteElegido.clases} clases`:esPrueba?"Clase de prueba":null}/>}
               {metodo==="stripe"&&<StripeCheckoutBtn post={post} session={session} onDone={onDone} onClose={onClose}/>}
               {loadingInsc&&<div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"center",padding:"8px",color:C.muted,fontSize:13}}><Spinner small/>Procesando…</div>}
               {errInsc&&<div style={{color:C.danger,fontSize:12,padding:"8px 12px",background:C.danger+"10",borderRadius:8,textAlign:"center"}}>{errInsc}</div>}
