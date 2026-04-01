@@ -3814,11 +3814,14 @@ function InscripcionModal({post,session,onClose,onDone}){
   const precioBase=parseFloat(post.precio)||0;
   const precioEfectivo=paqueteElegido
     ?(()=>{
-      const pt=parseFloat(paqueteElegido.precio_total);
-      const calc=Math.round(precioBase*(paqueteElegido.clases||1)*(1-(paqueteElegido.descuento||0)/100));
-      console.log("[Paquete]",{precio_total:paqueteElegido.precio_total,pt,precioBase,clases:paqueteElegido.clases,descuento:paqueteElegido.descuento,calc,usando:pt>0?"precio_total":"calc"});
+      const pt=parseFloat(paqueteElegido.precio_total)||0;
+      const desc=parseFloat(paqueteElegido.descuento)||0;
+      // Si tiene precio_total explícito, usarlo
       if(pt>0)return pt;
-      return calc;
+      // Si tiene descuento, aplicarlo al precio base * clases
+      if(desc>0)return Math.round(precioBase*(paqueteElegido.clases||1)*(1-desc/100));
+      // Fallback: precio base * clases sin descuento (no debería llegar acá)
+      return precioBase*(paqueteElegido.clases||1);
     })()
     :precioBase;
   const precio=tienePrecio
@@ -3828,7 +3831,7 @@ function InscripcionModal({post,session,onClose,onDone}){
   const inscribirDirecto=async(metodoElegido)=>{
     setLoadingInsc(true);
     try{
-      await sb.insertInscripcion({publicacion_id:post.id,alumno_id:session.user.id,alumno_email:session.user.email,metodo_pago:metodoElegido},session.access_token);
+      await sb.insertInscripcion({publicacion_id:post.id,alumno_id:session.user.id,alumno_email:session.user.email},session.access_token);
       sb.insertNotificacion({usuario_id:null,alumno_email:post.autor_email,tipo:"nueva_inscripcion",publicacion_id:post.id,pub_titulo:post.titulo,leida:false},session.access_token).catch(()=>{});
       const alumnoNombre=sb.getDisplayName(session.user.email)||session.user.email.split("@")[0];
       sb.sendEmail("nueva_inscripcion",post.autor_email,{pub_titulo:post.titulo,alumno_nombre:alumnoNombre},session.access_token).catch(()=>{});

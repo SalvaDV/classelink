@@ -408,7 +408,16 @@ function PostFormModal({session,postToEdit,onClose,onSave}){
       data.otorga_certificado=otorgaCertificado;
       // estado_validacion se maneja localmente (columna pendiente de crear en DB)
       const _estadoLocal=activoInicial===false?"pendiente":undefined;
-      if(tipo==="oferta"){data.precio=parseFloat(precio)||null;data.moneda=moneda||"ARS";data.tiene_prueba=tienePrueba;data.precio_prueba=tienePrueba?(parseFloat(precioPrueba)||null):null;if(paquetes.length)data.paquetes=JSON.stringify(paquetes);if(modo==="particular")data.precio_tipo=precioTipo;else{data.sinc=sinc;data.duracion_curso=modo==="curso"?"curso":null;if(fechaInicio)data.fecha_inicio=fechaInicio;if(fechaFin)data.fecha_fin=fechaFin;if(sinc==="sinc")data.clases_sinc=JSON.stringify(clasesSinc);}}
+      if(tipo==="oferta"){data.precio=parseFloat(precio)||null;data.moneda=moneda||"ARS";data.tiene_prueba=tienePrueba;data.precio_prueba=tienePrueba?(parseFloat(precioPrueba)||null):null;if(paquetes.length){
+        const precioNum=parseFloat(precio)||0;
+        const paquetesResueltos=paquetes.map(pq=>{
+          const pt=parseFloat(pq.precio_total)||0;
+          const desc=parseFloat(pq.descuento)||0;
+          const total=pt>0?pt:(desc>0?Math.round(precioNum*(pq.clases||1)*(1-desc/100)):precioNum*(pq.clases||1));
+          return{...pq,precio_total:total};
+        });
+        data.paquetes=JSON.stringify(paquetesResueltos);
+      }if(modo==="particular")data.precio_tipo=precioTipo;else{data.sinc=sinc;data.duracion_curso=modo==="curso"?"curso":null;if(fechaInicio)data.fecha_inicio=fechaInicio;if(fechaFin)data.fecha_fin=fechaFin;if(sinc==="sinc")data.clases_sinc=JSON.stringify(clasesSinc);}}
       let savedPub=null;
       if(editing){
         await sb.updatePublicacion(postToEdit.id,data,session.access_token);
