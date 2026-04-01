@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /functions/
+ 
+Sitemap: https://luderis.com/sitemap.xml
+ 
