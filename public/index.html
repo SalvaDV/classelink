@@ -2,63 +2,93 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-
-    <!-- Viewport: sin zoom en iOS, sin scroll horizontal -->
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-
-    <!-- PWA / Mobile -->
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Luderis" />
-
-    <!-- SEO -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#1A6ED8" />
-    <meta name="description" content="Luderis — Plataforma educativa argentina. Encontrá clases particulares, cursos y docentes. Aprendé lo que quieras, enseñá lo que sabés." />
-    <meta name="keywords" content="clases particulares, cursos online, docentes, educación, argentina, aprender" />
-    <meta name="author" content="Luderis" />
 
-    <!-- Open Graph (WhatsApp, Facebook, LinkedIn) -->
+    <!-- SEO primario -->
+    <title>Luderis — Aprendé y enseñá lo que quieras</title>
+    <meta name="description" content="Encontrá docentes verificados para clases particulares y cursos online o presenciales en Argentina. Matemática, inglés, guitarra, programación y mucho más." />
+    <meta name="keywords" content="clases particulares argentina, cursos online, docentes verificados, aprender, enseñar, matemática, inglés, programación, luderis" />
+    <link rel="canonical" href="https://luderis.com" />
+
+    <!-- Open Graph (Facebook, WhatsApp, LinkedIn) -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Luderis — Aprendé lo que quieras" />
-    <meta property="og:description" content="Conectá con docentes y alumnos. Clases particulares, cursos online y presenciales en toda Argentina." />
-    <meta property="og:image" content="%PUBLIC_URL%/logo512.png" />
     <meta property="og:url" content="https://luderis.com" />
+    <meta property="og:title" content="Luderis — Aprendé y enseñá lo que quieras" />
+    <meta property="og:description" content="La plataforma educativa argentina. Conectamos alumnos con docentes verificados para clases particulares y cursos online o presenciales." />
+    <meta property="og:image" content="https://luderis.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:locale" content="es_AR" />
+    <meta property="og:site_name" content="Luderis" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Luderis — Aprendé lo que quieras" />
-    <meta name="twitter:description" content="Conectá con docentes y alumnos en Argentina." />
-    <meta name="twitter:image" content="%PUBLIC_URL%/logo512.png" />
+    <meta name="twitter:title" content="Luderis — Aprendé y enseñá lo que quieras" />
+    <meta name="twitter:description" content="Encontrá docentes verificados para clases particulares y cursos en Argentina." />
+    <meta name="twitter:image" content="https://luderis.com/og-image.png" />
 
+    <!-- Structured Data — Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "EducationalOrganization",
+      "name": "Luderis",
+      "url": "https://luderis.com",
+      "logo": "https://luderis.com/logo.png",
+      "description": "Plataforma educativa argentina que conecta alumnos con docentes verificados.",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "AR"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "email": "contacto@luderis.com"
+      },
+      "sameAs": []
+    }
+    </script>
+
+    <!-- Structured Data — WebSite with SearchAction -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Luderis",
+      "url": "https://luderis.com",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://luderis.com/?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <!-- Favicons -->
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
 
-    <title>Luderis</title>
+    <!-- Preconnect para performance -->
+    <link rel="preconnect" href="https://hptdyehzqfpgtrpuydny.supabase.co" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
 
-    <style>
-      /* Evitar flash blanco al cargar */
-      html, body, #root {
-        margin: 0;
-        padding: 0;
-        min-height: 100vh;
-        background: #F6F9FF;
-      }
-      /* Evitar scroll horizontal global */
-      html {
-        overflow-x: hidden;
-      }
-      /* Scrollbar discreta en Chrome */
-      ::-webkit-scrollbar { width: 6px; height: 6px; }
-      ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: #DDE5F5; border-radius: 3px; }
-      ::-webkit-scrollbar-thumb:hover { background: #1A6ED840; }
-    </style>
+    <!-- Robots -->
+    <meta name="robots" content="index, follow" />
+    <meta name="googlebot" content="index, follow" />
   </head>
   <body>
-    <noscript>Para usar Luderis necesitás JavaScript habilitado en tu navegador.</noscript>
+    <noscript>
+      <div style="font-family:sans-serif;text-align:center;padding:40px;max-width:500px;margin:0 auto">
+        <h1>Luderis</h1>
+        <p>Para usar Luderis necesitás habilitar JavaScript en tu navegador.</p>
+        <p>Luderis es la plataforma educativa argentina donde podés encontrar docentes para clases particulares y cursos online o presenciales.</p>
+      </div>
+    </noscript>
     <div id="root"></div>
   </body>
 </html>
