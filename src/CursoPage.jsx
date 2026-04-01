@@ -3865,7 +3865,11 @@ function InscripcionModal({post,session,onClose,onDone}){
 
   const esPrueba = opcion==="prueba";
 
-  const precioEfectivo = React.useMemo(()=>{
+  // Lógica de precio simplificada:
+  // - Sin pack:  precio = post.precio,       cantidad = 1
+  // - Con pack:  precio = pack.precio_total,  cantidad = 1  (pack ya tiene el total)
+  // - Prueba:    precio = precio_prueba,       cantidad = 1
+  const mpPrecio = React.useMemo(()=>{
     if(esPrueba) return parseFloat(post.precio_prueba)||0;
     if(paqueteElegido){
       const pt=parseFloat(paqueteElegido.precio_total)||0;
@@ -3877,14 +3881,22 @@ function InscripcionModal({post,session,onClose,onDone}){
     return precioBase;
   },[esPrueba,paqueteElegido,precioBase,post.precio_prueba]);
 
+  const mpCantidad = 1; // siempre 1 — el precio ya incluye todo
+
+  const precioEfectivo = mpPrecio; // alias para compatibilidad
+
   const precioLabel = React.useMemo(()=>{
+    if(!opcion)return "";
+    const mon=post.moneda||"ARS";
     if(esPrueba){
       const pp=parseFloat(post.precio_prueba)||0;
-      return pp>0?`${post.moneda||"ARS"} $${pp.toLocaleString("es-AR")} (prueba)`:"Gratis (prueba)";
+      return pp>0?`${mon} $${pp.toLocaleString("es-AR")} (prueba)`:"Gratis (prueba)";
     }
-    if(paqueteElegido) return `${post.moneda||"ARS"} $${precioEfectivo.toLocaleString("es-AR")} (${paqueteElegido.clases} clases)`;
-    return tienePrecio?`${post.moneda||"ARS"} $${precioBase.toLocaleString("es-AR")}`:"Gratis";
-  },[esPrueba,paqueteElegido,precioEfectivo,precioBase,tienePrecio,post]);
+    if(paqueteElegido){
+      return `${mon} $${mpPrecio.toLocaleString("es-AR")} (${paqueteElegido.clases} clases)`;
+    }
+    return tienePrecio?`${mon} $${precioBase.toLocaleString("es-AR")}`:"Gratis";
+  },[opcion,esPrueba,paqueteElegido,mpPrecio,precioBase,tienePrecio,post.moneda,post.precio_prueba]);
 
   // Ir a pago solo si hay precio; si es gratis inscribir directo
   const continuarAlPago = () => {
@@ -4041,7 +4053,7 @@ function InscripcionModal({post,session,onClose,onDone}){
                   </button>
                 </>
               )}
-              {metodo==="mp"&&<MPCheckoutBtn post={post} session={session} onInscripcionOk={()=>{onClose();onDone();}} precioOverride={precioEfectivo} cantidadOverride={paqueteElegido?.clases||1} paqueteNombre={paqueteElegido?paqueteElegido.nombre||`${paqueteElegido.clases} clases`:esPrueba?"Clase de prueba":null}/>}
+              {metodo==="mp"&&<MPCheckoutBtn post={post} session={session} onInscripcionOk={()=>{onClose();onDone();}} precioOverride={mpPrecio} cantidadOverride={mpCantidad} paqueteNombre={paqueteElegido?paqueteElegido.nombre||`${paqueteElegido.clases} clases`:esPrueba?"Clase de prueba":null}/>}
               {metodo==="stripe"&&<StripeCheckoutBtn post={post} session={session} onDone={onDone} onClose={onClose}/>}
               {loadingInsc&&<div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"center",padding:"8px",color:C.muted,fontSize:13}}><Spinner small/>Procesando…</div>}
               {errInsc&&<div style={{color:C.danger,fontSize:12,padding:"8px 12px",background:C.danger+"10",borderRadius:8,textAlign:"center"}}>{errInsc}</div>}
