@@ -729,7 +729,8 @@ function PostFormModal({session,postToEdit,onClose,onSave}){
                 <div style={{display:"flex",flexDirection:"column",gap:8}}>
                   {paquetes.map((pq,i)=>{
                     const precioNum=parseFloat(precio)||0;
-                    const precioFinal=pq.descuento>0?(precioNum*(pq.clases||1)*(1-(pq.descuento||0)/100)):(pq.precio_total||(precioNum*(pq.clases||1)));
+                    const ptVal=parseFloat(pq.precio_total)||0;
+                  const precioFinal=ptVal>0?ptVal:(pq.descuento>0?precioNum*(pq.clases||1)*(1-(pq.descuento||0)/100):precioNum*(pq.clases||1));
                     return(
                       <div key={i} style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}}>
                         <div style={{display:"flex",gap:8,alignItems:"center"}}>
