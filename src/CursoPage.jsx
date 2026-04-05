@@ -1662,10 +1662,24 @@ function CertificadoBtn({post,session,inscripcion}){
       ctx.fillText("APROBADO",0,7);
       ctx.restore();
 
+      // Guardar en DB para verificación online
+      const dataUrl=canvas.toDataURL("image/png");
+      sb.db("certificados","POST",{
+        id:uid,
+        alumno_email:session.user.email,
+        alumno_nombre:nombre,
+        curso_titulo:post.titulo,
+        curso_id:post.id,
+        docente_email:post.autor_email,
+        docente_nombre:docente,
+        materia:post.materia||"",
+        fecha_emision:new Date().toISOString(),
+      },session.access_token,"return=minimal").catch(()=>{});// no bloquear si falla
+
       // Descargar
       const link=document.createElement("a");
       link.download=`certificado-${post.titulo.slice(0,30).replace(/\s+/g,"-")}-${uid}.png`;
-      link.href=canvas.toDataURL("image/png");
+      link.href=dataUrl;
       link.click();
     }catch(e){alert("Error al generar: "+e.message);}
     finally{setGenerando(false);}
