@@ -417,7 +417,7 @@ function PostFormModal({session,postToEdit,onClose,onSave}){
           return{...pq,precio_total:total};
         });
         data.paquetes=JSON.stringify(paquetesResueltos);
-      }if(modo==="particular")data.precio_tipo=precioTipo;else{data.sinc=sinc;data.duracion_curso=modo==="curso"?"curso":null;if(fechaInicio)data.fecha_inicio=fechaInicio;if(fechaFin)data.fecha_fin=fechaFin;if(sinc==="sinc")data.clases_sinc=JSON.stringify(clasesSinc);}}
+      }if(modo==="particular"){data.precio_tipo=precioTipo;if(sinc==="recurrente"&&clasesSinc.length){data.sinc="sinc";data.clases_sinc=JSON.stringify(clasesSinc);}}else{data.sinc=sinc;data.duracion_curso=modo==="curso"?"curso":null;if(fechaInicio)data.fecha_inicio=fechaInicio;if(fechaFin)data.fecha_fin=fechaFin;if(sinc==="sinc")data.clases_sinc=JSON.stringify(clasesSinc);}}
       let savedPub=null;
       if(editing){
         await sb.updatePublicacion(postToEdit.id,data,session.access_token);
@@ -654,6 +654,51 @@ function PostFormModal({session,postToEdit,onClose,onSave}){
                 )}
               </>
             )}
+            {/* Clase recurrente (solo particulares) */}
+            {modo==="particular"&&(
+              <div>
+                <Label>Regularidad</Label>
+                <div style={{display:"flex",gap:7}}>
+                  {[{v:"unica",l:"Una vez / sin horario fijo"},{v:"recurrente",l:"Clases recurrentes"}].map(({v,l})=>(
+                    <button key={v} type="button" onClick={()=>{setSinc(v);if(v==="unica")setClasesSinc([]);}}
+                      style={{flex:1,padding:"8px",borderRadius:9,fontSize:12,cursor:"pointer",fontFamily:FONT,
+                        background:sinc===v?C.accent:C.card,color:sinc===v?"#fff":C.muted,
+                        border:`1px solid ${sinc===v?"transparent":C.border}`,fontWeight:sinc===v?700:400,transition:"all .15s"}}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+                {sinc==="recurrente"&&(
+                  <div style={{marginTop:10,background:C.bg,borderRadius:10,padding:"10px 12px",border:`1px solid ${C.border}`}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                      <div style={{fontSize:12,color:C.muted,fontWeight:600}}>Días y horarios semanales</div>
+                      <button type="button" onClick={addClase}
+                        style={{background:C.accentDim,border:`1px solid ${C.accent}44`,borderRadius:7,color:C.accent,padding:"3px 9px",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:FONT}}>
+                        + Agregar día
+                      </button>
+                    </div>
+                    {clasesSinc.length===0&&<div style={{color:C.muted,fontSize:12,textAlign:"center",padding:"8px 0"}}>Agregá al menos un día y horario</div>}
+                    {clasesSinc.map((c,i)=>{
+                      const toMin=(t)=>{if(!t)return null;const p=t.split(":");if(p.length<2)return null;const h=parseInt(p[0]);const m=parseInt(p[1]);if(isNaN(h)||isNaN(m))return null;return h*60+m;};
+                      const fi=toMin(c.hora_inicio);const ff=toMin(c.hora_fin);const inv=fi!==null&&ff!==null&&ff<=fi;
+                      return(
+                        <div key={i} style={{display:"flex",gap:5,alignItems:"center",marginBottom:6,background:C.surface,borderRadius:9,padding:"7px 9px",border:`1px solid ${inv?"#E05C5C44":C.border}`,flexWrap:"wrap"}}>
+                          <select value={c.dia} onChange={e=>updClase(i,"dia",e.target.value)} style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:7,padding:"4px 7px",color:C.text,fontSize:11,fontFamily:FONT,cursor:"pointer",outline:"none",flex:2}}>
+                            {["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"].map(d=><option key={d}>{d}</option>)}
+                          </select>
+                          <input type="time" value={c.hora_inicio} onChange={e=>updClase(i,"hora_inicio",e.target.value)} style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:7,padding:"4px 7px",color:C.text,fontSize:11,fontFamily:FONT,outline:"none",colorScheme:"light dark",flex:2}}/>
+                          <span style={{color:C.muted,fontSize:11}}>→</span>
+                          <input type="time" value={c.hora_fin} onChange={e=>updClase(i,"hora_fin",e.target.value)} style={{background:C.bg,border:`1px solid ${inv?C.danger:C.border}`,borderRadius:7,padding:"4px 7px",color:inv?C.danger:C.text,fontSize:11,fontFamily:FONT,outline:"none",colorScheme:"light dark",flex:2}}/>
+                          {inv&&<span style={{fontSize:10,color:C.danger,width:"100%"}}>⚠ Fin debe ser posterior al inicio</span>}
+                          <button type="button" onClick={()=>remClase(i)} style={{background:"none",border:"none",color:C.danger,fontSize:15,cursor:"pointer",flexShrink:0}}>×</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div onClick={()=>setOtorgaCertificado(v=>!v)} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:C.accentDim,borderRadius:8,cursor:"pointer"}}>
               <div style={{width:20,height:20,borderRadius:5,border:`2px solid ${otorgaCertificado?C.accent:C.border}`,background:otorgaCertificado?C.accent:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .15s"}}>
                 {otorgaCertificado&&<span style={{color:"#fff",fontSize:13,fontWeight:700}}>✓</span>}

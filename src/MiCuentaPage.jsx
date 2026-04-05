@@ -715,6 +715,119 @@ function ContraRespondedor({oferta,session,onActualizado,onVer}){
 // ─── ALERTAS TAB ──────────────────────────────────────────────────────────────
 // Sistema de alertas por email: el usuario define criterios con lenguaje natural
 // y cuando se publica algo similar, recibe un email automático.
+function BilleteraTab({session}){
+  const [saldo,setSaldo]=useState(null);
+  const [movimientos,setMovimientos]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [monto,setMonto]=useState("");
+  const [cargando,setCargando]=useState(false);
+
+  const cargar=useCallback(async()=>{
+    try{
+      const [bil,movs]=await Promise.all([
+        sb.db(`billetera?usuario_id=eq.${session.user.id}&select=saldo`,
+          "GET",null,session.access_token).then(r=>r?.[0]||{saldo:0}),
+        sb.db(`billetera_movimientos?usuario_id=eq.${session.user.id}&order=created_at.desc&limit=20`,
+          "GET",null,session.access_token).catch(()=>[]),
+      ]);
+      setSaldo(parseFloat(bil.saldo)||0);
+      setMovimientos(movs||[]);
+    }catch{setSaldo(0);setMovimientos([]);}
+    finally{setLoading(false);}
+  },[session]);
+
+  useEffect(()=>{cargar();},[cargar]);
+
+  const cargarSaldo=async()=>{
+    const n=parseFloat(monto);
+    if(!n||n<100){toast("Monto mínimo: $100","error");return;}
+    setCargando(true);
+    try{
+      // Crear preferencia MP para cargar saldo
+      const result=await sb.createMPCheckout({
+        publicacion_id:null,
+        titulo:`Recarga de billetera Luderis — $${n.toLocaleString("es-AR")}`,
+        descripcion:"Créditos para usar en clases",
+        precio:n,cantidad:1,
+        alumno_email:session.user.email,
+        alumno_nombre:session.user.email.split("@")[0],
+        docente_email:"billetera@luderis.com",
+        tipo:"recarga_billetera",
+      },session.access_token);
+      if(result.disabled){toast("Pago online no disponible aún","info");return;}
+      localStorage.setItem("mp_pending_billetera",JSON.stringify({monto:n,email:session.user.email}));
+      window.location.href=result.checkout_url;
+    }catch(e){toast("Error: "+e.message,"error");}
+    finally{setCargando(false);}
+  };
+
+  const TIPO_ICONS={recarga:"⬆️",pago:"⬇️",reembolso:"↩️",bono:"🎁"};
+  const TIPO_LABELS={recarga:"Recarga",pago:"Pago de clase",reembolso:"Reembolso",bono:"Bono"};
+
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:16}}>
+
+      {/* Saldo actual */}
+      <div style={{background:"linear-gradient(135deg,#0F3F7A,#1A6ED8)",borderRadius:18,padding:"24px 22px",color:"#fff",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:-20,right:-20,width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,.06)"}}/>
+        <div style={{fontSize:11,fontWeight:700,letterSpacing:.8,opacity:.75,marginBottom:8}}>SALDO DISPONIBLE</div>
+        {loading
+          ?<div style={{fontSize:36,fontWeight:800}}>…</div>
+          :<div style={{fontSize:42,fontWeight:800}}>${(saldo||0).toLocaleString("es-AR",{maximumFractionDigits:0})}</div>
+        }
+        <div style={{fontSize:12,opacity:.65,marginTop:4}}>Créditos Luderis · ARS</div>
+      </div>
+
+      {/* Cargar saldo */}
+      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px"}}>
+        <div style={{fontWeight:700,color:C.text,fontSize:14,marginBottom:12}}>Cargar saldo</div>
+        <div style={{display:"flex",gap:8,marginBottom:10,flexWrap:"wrap"}}>
+          {[500,1000,2000,5000].map(n=>(
+            <button key={n} onClick={()=>setMonto(String(n))}
+              style={{padding:"6px 14px",borderRadius:20,border:`1px solid ${monto===String(n)?C.accent:C.border}`,background:monto===String(n)?C.accentDim:C.bg,color:monto===String(n)?C.accent:C.muted,cursor:"pointer",fontSize:12,fontWeight:600,fontFamily:FONT}}>
+              ${n.toLocaleString("es-AR")}
+            </button>
+          ))}
+        </div>
+        <div style={{display:"flex",gap:8}}>
+          <input value={monto} onChange={e=>setMonto(e.target.value)} type="number" min="100" placeholder="Otro monto (mín. $100)"
+            style={{flex:1,background:C.bg,border:`1px solid ${C.border}`,borderRadius:9,padding:"9px 12px",color:C.text,fontSize:14,outline:"none",fontFamily:FONT}}/>
+          <button onClick={cargarSaldo} disabled={cargando||!monto}
+            style={{background:C.accent,border:"none",borderRadius:9,color:"#fff",padding:"9px 18px",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:FONT,opacity:(!monto||cargando)?.5:1}}>
+            {cargando?"…":"Cargar"}
+          </button>
+        </div>
+        <div style={{fontSize:11,color:C.muted,marginTop:8}}>Pagá con Mercado Pago · Los créditos se acreditan al instante</div>
+      </div>
+
+      {/* Movimientos */}
+      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px"}}>
+        <div style={{fontWeight:700,color:C.text,fontSize:14,marginBottom:12}}>Historial</div>
+        {loading?<Spinner small/>:movimientos.length===0
+          ?<div style={{color:C.muted,fontSize:13,textAlign:"center",padding:"12px 0"}}>Sin movimientos aún.</div>
+          :movimientos.map((m,i)=>{
+            const esIngreso=m.tipo==="recarga"||m.tipo==="reembolso"||m.tipo==="bono";
+            return(
+              <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:i<movimientos.length-1?`1px solid ${C.border}`:"none"}}>
+                <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                  <span style={{fontSize:20}}>{TIPO_ICONS[m.tipo]||"💳"}</span>
+                  <div>
+                    <div style={{fontSize:13,color:C.text,fontWeight:500}}>{TIPO_LABELS[m.tipo]||m.tipo}{m.descripcion?` — ${m.descripcion}`:""}</div>
+                    <div style={{fontSize:11,color:C.muted}}>{new Date(m.created_at).toLocaleDateString("es-AR",{day:"numeric",month:"short",year:"numeric"})}</div>
+                  </div>
+                </div>
+                <div style={{fontWeight:700,fontSize:14,color:esIngreso?C.success:C.danger}}>
+                  {esIngreso?"+":"-"}${Math.abs(m.monto||0).toLocaleString("es-AR")}
+                </div>
+              </div>
+            );
+          })
+        }
+      </div>
+    </div>
+  );
+}
+
 function ReferidosTab({session}){
   const refCode=btoa(session.user.id).replace(/[^a-zA-Z0-9]/g,"").slice(0,10);
   const refUrl=`${window.location.origin}?ref=${refCode}`;
@@ -1236,6 +1349,7 @@ function MiCuentaPage({session,onOpenDetail,onOpenCurso,onEdit,onNew,onOpenChat,
           {id:"resenas",label:"Reseñas",count:reseñas.length||null},
           {id:"alertas",label:"🔔 Alertas ✦",count:null},
           {id:"referidos",label:"🎁 Referidos",count:null},
+          {id:"billetera",label:"💰 Billetera",count:null},
         ].map(tab=>{
           const active=tabCuenta===tab.id;
           return(
@@ -1466,6 +1580,7 @@ function MiCuentaPage({session,onOpenDetail,onOpenCurso,onEdit,onNew,onOpenChat,
       )}
       {tabCuenta==="alertas"&&<AlertasTab session={session}/>}
       {tabCuenta==="referidos"&&<ReferidosTab session={session}/>}
+      {tabCuenta==="billetera"&&<BilleteraTab session={session}/>}
       {ofertasModal&&<OfertasRecibidasModal post={ofertasModal} session={session} onClose={()=>{setOfertasModal(null);cargar();if(onRefreshOfertas)onRefreshOfertas();}} onContactar={onOpenChat}/>}
       {espacioModal&&<EspacioClaseModal oferta={espacioModal} session={session} onClose={()=>setEspacioModal(null)}/>}
       {acuerdoModal&&<AcuerdoModal oferta={acuerdoModal} session={session} onClose={()=>setAcuerdoModal(null)} onConfirmado={()=>{cargar();setAcuerdoModal(null);}}/>}

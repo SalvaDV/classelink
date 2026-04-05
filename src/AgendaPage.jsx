@@ -101,8 +101,13 @@ function AgendaPage({session,onOpenCurso}){
         if(c.dia===diaNombre){
           const fechaInicio=p.fecha_inicio?new Date(p.fecha_inicio):null;
           const fechaFin=p.fecha_fin?new Date(p.fecha_fin):null;
-          if((!fechaInicio||fecha>=fechaInicio)&&(!fechaFin||fecha<=fechaFin)){
-            resultado.push({post:p,clase:c,fecha});
+          // Clases particulares recurrentes no tienen fechaFin
+          const esParticular=p.modo==="particular";
+          const dentroRango=esParticular
+            ?(!fechaInicio||fecha>=fechaInicio)  // sin límite de fin
+            :(!fechaInicio||fecha>=fechaInicio)&&(!fechaFin||fecha<=fechaFin);
+          if(dentroRango){
+            resultado.push({post:p,clase:c,fecha,esRecurrente:esParticular});
           }
         }
       });
