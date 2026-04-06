@@ -20,6 +20,7 @@ import {
 import LandingPage from "./LandingPage";
 import AuthScreen from "./AuthScreen";
 import { PriceSlider } from "./PostFormModal";
+import { AcuerdoModal, EspacioClaseModal } from "./MiCuentaPage";
 
 
 function Sidebar({page,setPage,session,onLogout,onNewPost,unreadCount,ofertasCount,notifCount,ofertasAceptadasNuevas,mobile,open,onClose,theme,onToggleTheme,onForceRender,esAdmin}){

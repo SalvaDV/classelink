@@ -1775,4 +1775,5 @@ function AcuerdoModal({oferta,session,onClose,onConfirmado}){
 
 // ─── CHATBOT WIDGET — flotante abajo a la derecha ──────────────────────────────
 // ─── PANEL DE NOTIFICACIONES ──────────────────────────────────────────────────
+export { AcuerdoModal, EspacioClaseModal };
 export default MiCuentaPage;
