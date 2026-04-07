@@ -349,7 +349,6 @@ function ExplorePage({session,onOpenChat,onOpenDetail,onOpenPerfil,onOpenCurso})
 
   return(<>
     <div style={{fontFamily:FONT,animation:"fadeUp .2s ease"}}>
-      <RecordatoriosHoy session={session} onOpenCurso={onOpenCurso}/>
 
       {/* Drawer de filtros — siempre disponible */}
       {panelOpen&&(
