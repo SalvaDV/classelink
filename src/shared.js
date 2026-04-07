@@ -278,6 +278,64 @@ export const ErrMsg=({msg})=>msg?<div style={{color:C.danger,fontSize:12,margin:
 export const Label=({children})=><div style={{color:C.muted,fontSize:12,fontWeight:600,letterSpacing:.3,marginBottom:6}}>{children}</div>;
 export const Modal=({children,onClose,width="min(600px,97vw)"})=>(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:"8px 6px",fontFamily:FONT}} onClick={onClose}><div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,width,maxHeight:"96vh",overflowY:"auto",boxShadow:"0 8px 40px rgba(0,0,0,.15)",WebkitOverflowScrolling:"touch"}} onClick={e=>e.stopPropagation()}>{children}</div></div>);
 
+// ─── LEGAL MODAL (T&C + Privacidad) ──────────────────────────────────────────
+const LEGAL_SECTIONS=[
+  {title:"1. Aceptación",body:"Al registrarte en Luderis aceptás estos Términos y Condiciones. Si no estás de acuerdo, no uses la plataforma."},
+  {title:"2. Descripción del servicio",body:"Luderis es una plataforma que conecta docentes y estudiantes en Argentina. Facilitamos el encuentro entre partes pero no somos empleadores, agencias de colocación ni intermediarios educativos oficiales. Las relaciones contractuales se establecen directamente entre docentes y alumnos."},
+  {title:"3. Registro y cuenta",body:"Debés tener al menos 18 años o contar con autorización expresa de un tutor legal. Sos responsable de mantener la confidencialidad de tu contraseña y de toda actividad que ocurra en tu cuenta. Notificá inmediatamente cualquier uso no autorizado a contacto@luderis.com."},
+  {title:"4. Uso aceptable",body:"Está prohibido publicar contenido falso, ofensivo, discriminatorio o ilegal. No podés usar la plataforma para acosar, engañar o perjudicar a otros usuarios. No podés eludir los mecanismos de pago de la plataforma para acordar transacciones fuera de Luderis."},
+  {title:"5. Contenido del usuario",body:"Al publicar contenido en Luderis (descripciones, materiales, reseñas) otorgás a Luderis una licencia no exclusiva, gratuita y mundial para mostrarlo en la plataforma. Sos el único responsable del contenido que publicás y garantizás que tenés los derechos necesarios para hacerlo."},
+  {title:"6. Pagos y comisiones",body:"Los pagos procesados a través de MercadoPago están sujetos a los términos de dicho servicio. Luderis cobra una comisión del 10% sobre transacciones realizadas dentro de la plataforma. Los precios publicados son en la moneda indicada por el docente."},
+  {title:"7. Limitación de responsabilidad",body:"Luderis no garantiza la calidad, idoneidad ni veracidad de los servicios ofrecidos por los docentes. No somos responsables por disputas, daños o pérdidas que surjan de las relaciones entre usuarios. En ningún caso nuestra responsabilidad superará el monto pagado en la plataforma en los últimos 3 meses."},
+  {title:"8. Modificaciones",body:"Podemos actualizar estos términos con previo aviso de 30 días por email. El uso continuado de la plataforma implica la aceptación de los nuevos términos."},
+  {title:"9. Ley aplicable",body:"Estos términos se rigen por las leyes de la República Argentina. Cualquier disputa será resuelta ante los tribunales ordinarios de la Ciudad Autónoma de Buenos Aires."},
+  {title:"10. Contacto",body:"Ante dudas, reclamos o solicitudes escribinos a contacto@luderis.com"},
+];
+const PRIVACY_SECTIONS=[
+  {title:"Responsable del tratamiento",body:"Luderis (contacto@luderis.com) es responsable del tratamiento de tus datos personales conforme a la Ley 25.326 de Protección de Datos Personales de la República Argentina."},
+  {title:"Datos que recopilamos",body:"• Email y contraseña (para autenticación)\n• Nombre visible, foto de perfil y biografía (opcionales, proporcionados por vos)\n• Ciudad y ubicación aproximada (opcional)\n• Información de perfil docente: DNI, fecha de nacimiento, situación fiscal (solo para verificación KYC)\n• Historial de interacciones: mensajes, inscripciones, reseñas y pagos"},
+  {title:"Finalidad del tratamiento",body:"Usamos tus datos para:\n• Proveer y mejorar el servicio\n• Verificar tu identidad como docente\n• Procesar pagos y emitir comprobantes\n• Enviarte notificaciones del servicio\n• Prevenir fraudes y usos indebidos"},
+  {title:"Base legal",body:"El tratamiento se basa en: (a) la ejecución del contrato de servicio que aceptás al registrarte, (b) tu consentimiento explícito para datos sensibles (KYC), y (c) el interés legítimo de Luderis en prevenir fraudes."},
+  {title:"Compartición de datos",body:"No vendemos tus datos a terceros. Podemos compartirlos con:\n• MercadoPago (procesamiento de pagos)\n• Resend (envío de emails transaccionales)\n• Supabase (almacenamiento e infraestructura)\nTodos bajo acuerdos de confidencialidad y conforme a la normativa aplicable."},
+  {title:"Retención de datos",body:"Conservamos tus datos mientras tu cuenta esté activa. Al solicitar la eliminación de tu cuenta, borraremos tus datos personales en un plazo máximo de 30 días, excepto los que debamos conservar por obligaciones legales (ej. registros de pagos por 5 años según normativa fiscal)."},
+  {title:"Tus derechos",body:"Conforme a la Ley 25.326 tenés derecho a: acceder a tus datos, rectificarlos, suprimirlos, y oponerte a su tratamiento. Para ejercer estos derechos escribinos a contacto@luderis.com. Podés revocar tu consentimiento en cualquier momento sin que ello afecte la licitud del tratamiento anterior."},
+  {title:"Seguridad",body:"Implementamos medidas técnicas y organizativas para proteger tus datos: cifrado en tránsito (HTTPS/TLS), acceso con credenciales únicas, y políticas de acceso mínimo necesario (Row Level Security en base de datos)."},
+  {title:"Cookies",body:"Usamos almacenamiento local (localStorage) para mantener tu sesión y preferencias. No usamos cookies de seguimiento publicitario."},
+];
+export function LegalModal({tab="tc",onClose}){
+  const [activeTab,setActiveTab]=React.useState(tab);
+  const sections=activeTab==="tc"?LEGAL_SECTIONS:PRIVACY_SECTIONS;
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:9990,display:"flex",alignItems:"center",justifyContent:"center",padding:"8px",fontFamily:FONT}} onClick={onClose}>
+      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,width:"min(640px,calc(100vw - 16px))",maxHeight:"90vh",display:"flex",flexDirection:"column",overflow:"hidden",boxShadow:"0 8px 40px rgba(0,0,0,.2)"}} onClick={e=>e.stopPropagation()}>
+        <div style={{padding:"18px 20px 0",borderBottom:`1px solid ${C.border}`,flexShrink:0}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            <div style={{fontWeight:800,fontSize:16,color:C.text}}>Luderis — Legal</div>
+            <button onClick={onClose} style={{background:"none",border:"none",color:C.muted,fontSize:22,cursor:"pointer",lineHeight:1}}>×</button>
+          </div>
+          <div style={{display:"flex",gap:4}}>
+            {[["tc","Términos y Condiciones"],["priv","Política de Privacidad"]].map(([id,label])=>(
+              <button key={id} onClick={()=>setActiveTab(id)}
+                style={{padding:"7px 14px",borderRadius:"8px 8px 0 0",border:"none",fontSize:12,fontWeight:activeTab===id?700:400,cursor:"pointer",fontFamily:FONT,background:activeTab===id?C.bg:"transparent",color:activeTab===id?C.accent:C.muted,borderBottom:activeTab===id?`2px solid ${C.accent}`:"2px solid transparent"}}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{overflowY:"auto",padding:"20px",flex:1,WebkitOverflowScrolling:"touch"}}>
+          {sections.map(({title,body})=>(
+            <div key={title} style={{marginBottom:18,paddingBottom:18,borderBottom:`1px solid ${C.border}`}}>
+              <div style={{fontWeight:700,color:C.text,fontSize:13,marginBottom:6}}>{title}</div>
+              <p style={{color:C.muted,fontSize:12,lineHeight:1.7,margin:0,whiteSpace:"pre-line"}}>{body}</p>
+            </div>
+          ))}
+          <p style={{color:C.muted,fontSize:11,textAlign:"center",marginTop:8}}>Última actualización: {new Date().toLocaleDateString("es-AR",{month:"long",year:"numeric"})}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Reemplaza window.confirm() con un modal accesible.
  * Uso: const {confirmEl,confirm}=useConfirm();

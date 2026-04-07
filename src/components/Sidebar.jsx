@@ -1,13 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import * as sb from "../supabase";
 import {
   C, FONT, LUD,
   _avatarCache,
   setLang, t,
-  Avatar,
+  Avatar, LegalModal,
 } from "../shared";
 
 export default function Sidebar({page,setPage,session,onLogout,onNewPost,unreadCount,ofertasCount,notifCount,ofertasAceptadasNuevas,mobile,open,onClose,theme,onToggleTheme,onForceRender,esAdmin}){
+  const [legalTab,setLegalTab]=useState(null);// "tc"|"priv"|null
   const nombre=sb.getDisplayName(session.user.email);
   const nav=[
     {id:"explore",icon:"🔍",label:t("explore")},
@@ -142,9 +143,16 @@ export default function Sidebar({page,setPage,session,onLogout,onNewPost,unreadC
             </button>
           ))}
         </div>
+        {/* Links legales */}
+        <div style={{display:"flex",gap:8,justifyContent:"center",paddingTop:4}}>
+          <button onClick={()=>setLegalTab("tc")} style={{background:"none",border:"none",color:C.muted,fontSize:10,cursor:"pointer",fontFamily:FONT,textDecoration:"underline",padding:0}}>Términos</button>
+          <span style={{color:C.border,fontSize:10}}>·</span>
+          <button onClick={()=>setLegalTab("priv")} style={{background:"none",border:"none",color:C.muted,fontSize:10,cursor:"pointer",fontFamily:FONT,textDecoration:"underline",padding:0}}>Privacidad</button>
+        </div>
       </div>
       </div>
   );
-  if(mobile)return(<>{open&&<div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:89}}/>}<div style={{position:"fixed",left:0,top:0,height:"100vh",zIndex:90,transform:open?"translateX(0)":"translateX(-100%)",transition:"transform .25s",boxShadow:"4px 0 20px rgba(0,0,0,.1)"}}>{inner}</div></>);
-  return <div style={{position:"fixed",left:0,top:0,height:"100vh",zIndex:40}}>{inner}</div>;
+  const legalEl=legalTab?<LegalModal tab={legalTab} onClose={()=>setLegalTab(null)}/>:null;
+  if(mobile)return(<>{legalEl}{open&&<div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:89}}/>}<div style={{position:"fixed",left:0,top:0,height:"100vh",zIndex:90,transform:open?"translateX(0)":"translateX(-100%)",transition:"transform .25s",boxShadow:"4px 0 20px rgba(0,0,0,.1)"}}>{inner}</div></>);
+  return <>{legalEl}<div style={{position:"fixed",left:0,top:0,height:"100vh",zIndex:40}}>{inner}</div></>;
 }
