@@ -313,30 +313,42 @@ function AyudanteBuscador({post,session,ayudantesActuales,onUpdate}){
 // ─── JITSI MODAL ─────────────────────────────────────────────────────────────
 function JitsiModal({roomName,displayName,onClose}){
   const room=roomName.replace(/[^a-zA-Z0-9]/g,"").slice(0,32)||"luderisclase";
-  const src=`https://meet.jit.si/${room}#userInfo.displayName="${encodeURIComponent(displayName)}"`;
+  const url=`https://meet.jit.si/${room}#userInfo.displayName="${encodeURIComponent(displayName)}"`;
+  const [copied,setCopied]=useState(false);
+  const copiar=()=>{try{navigator.clipboard.writeText(url);}catch{} setCopied(true);setTimeout(()=>setCopied(false),2000);};
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:700,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:12}} onClick={onClose}>
-      <div style={{width:"min(900px,98vw)",height:"min(620px,90vh)",background:"#1a1a2e",borderRadius:16,overflow:"hidden",display:"flex",flexDirection:"column",boxShadow:"0 20px 60px rgba(0,0,0,.5)"}} onClick={e=>e.stopPropagation()}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 16px",background:"#12122a",flexShrink:0}}>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontSize:18}}>📹</span>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:700,display:"flex",alignItems:"center",justifyContent:"center",padding:16,fontFamily:FONT}} onClick={onClose}>
+      <div style={{background:"#12122a",borderRadius:20,width:"min(480px,96vw)",overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,.6)"}} onClick={e=>e.stopPropagation()}>
+        {/* Header */}
+        <div style={{background:"linear-gradient(135deg,#0F3F7A,#1A6ED8)",padding:"24px 28px",position:"relative"}}>
+          <button onClick={onClose} style={{position:"absolute",top:12,right:14,background:"none",border:"none",color:"rgba(255,255,255,.6)",fontSize:22,cursor:"pointer",lineHeight:1}}>×</button>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <span style={{fontSize:36}}>📹</span>
             <div>
-              <div style={{color:"#fff",fontWeight:700,fontSize:14}}>Videollamada grupal</div>
-              <div style={{color:"rgba(255,255,255,.5)",fontSize:11}}>Sala: {room}</div>
+              <div style={{color:"#fff",fontWeight:800,fontSize:18}}>Videollamada grupal</div>
+              <div style={{color:"rgba(255,255,255,.6)",fontSize:12}}>Sala privada de Luderis</div>
             </div>
           </div>
-          <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            <span style={{fontSize:11,color:"rgba(255,255,255,.4)"}}>Powered by Jitsi</span>
-            <button onClick={onClose} style={{background:"none",border:"1px solid rgba(255,255,255,.2)",borderRadius:8,color:"rgba(255,255,255,.7)",fontSize:13,cursor:"pointer",padding:"5px 12px",fontFamily:FONT}}>✕ Salir</button>
-          </div>
         </div>
-        <iframe
-          src={src}
-          title="Videollamada"
-          allow="camera; microphone; display-capture; autoplay; fullscreen"
-          allowFullScreen
-          style={{flex:1,border:"none",width:"100%"}}
-        />
+        {/* Body */}
+        <div style={{padding:"24px 28px",display:"flex",flexDirection:"column",gap:16}}>
+          <div style={{background:"#1e1e3a",borderRadius:12,padding:"14px 16px",border:"1px solid rgba(255,255,255,.1)"}}>
+            <div style={{fontSize:10,color:"rgba(255,255,255,.4)",fontWeight:700,letterSpacing:.5,marginBottom:6}}>NOMBRE DE LA SALA</div>
+            <div style={{color:"#fff",fontSize:14,fontFamily:"monospace",wordBreak:"break-all"}}>{room}</div>
+          </div>
+          <p style={{color:"rgba(255,255,255,.55)",fontSize:13,margin:0,lineHeight:1.6}}>
+            La videollamada se abre en una nueva pestaña. Podés compartir el link con los participantes.
+          </p>
+          <a href={url} target="_blank" rel="noopener noreferrer"
+            style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"linear-gradient(135deg,#1A6ED8,#2EC4A0)",border:"none",borderRadius:12,color:"#fff",padding:"14px",fontWeight:700,fontSize:15,textDecoration:"none",textAlign:"center",boxShadow:"0 4px 16px rgba(26,110,216,.4)",cursor:"pointer"}}
+            onClick={onClose}>
+            📹 Abrir videollamada →
+          </a>
+          <button onClick={copiar}
+            style={{background:"none",border:"1px solid rgba(255,255,255,.15)",borderRadius:10,color:copied?"#2EC4A0":"rgba(255,255,255,.5)",padding:"10px",fontSize:13,cursor:"pointer",fontFamily:FONT,transition:"all .15s"}}>
+            {copied?"✓ Link copiado":"Copiar link para compartir"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -3596,14 +3608,23 @@ function CursoPage({post,session,onClose,onUpdatePost}){
       const inscs=await sb.getInscripciones(post.id,session.access_token).catch(()=>[]);
       const emails=inscs.map(i=>i.alumno_email).filter(Boolean);
       const jitsiUrl=`https://meet.jit.si/${jitsiRoomCurso}`;
+      let enviados=0;
       // Notificaciones in-app + emails a todos los inscriptos
-      await Promise.all(emails.map(async email=>{
-        await sb.insertNotificacion({usuario_id:null,alumno_email:email,tipo:"clase_iniciada",publicacion_id:post.id,pub_titulo:post.titulo,leida:false},session.access_token).catch(()=>{});
-        await sb.sendEmail("clase_iniciada",email,{pub_titulo:post.titulo,docente_nombre:docenteDisplayName,jitsi_url:jitsiUrl},session.access_token).catch(()=>{});
-      }));
+      for(const email of emails){
+        try{
+          await sb.insertNotificacion({usuario_id:null,alumno_email:email,tipo:"clase_iniciada",publicacion_id:post.id,pub_titulo:post.titulo,leida:false},session.access_token);
+          await sb.sendEmail("clase_iniciada",email,{pub_titulo:post.titulo,docente_nombre:docenteDisplayName,jitsi_url:jitsiUrl},session.access_token);
+          enviados++;
+        }catch(e){console.warn("Error notif a",email,e.message);}
+      }
       setClaseActiva(true);
       setShowJitsiCurso(true);
-    }catch(e){alert("Error al iniciar: "+e.message);}
+      if(emails.length===0){
+        toast("Clase iniciada. No hay alumnos inscriptos todavía.","info",4000);
+      } else {
+        toast(`Clase iniciada · ${enviados}/${emails.length} alumno${emails.length!==1?"s":""} notificado${enviados!==1?"s":""}. ✓`,"success",5000);
+      }
+    }catch(e){alert("Error al iniciar la clase: "+e.message);}
     finally{setIniciandoClase(false);}
   };
   const [needsValoracion,setNeedsValoracion]=useState(false);
