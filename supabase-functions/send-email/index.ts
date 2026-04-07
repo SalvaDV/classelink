@@ -409,6 +409,23 @@ Object.assign(TEMPLATES, {
     `, `Nueva publicación: ${data.pub_titulo}`),
   }),
 
+  clase_iniciada: (data: any, appUrl: string) => ({
+    subject: `🔴 La clase "${data.pub_titulo}" está comenzando ahora`,
+    preheader: `${data.docente_nombre} está esperándote. Uníte a la videollamada.`,
+    html: emailBase(`
+      <h2>¡Tu clase está comenzando!</h2>
+      <p><strong>${data.docente_nombre}</strong> inició la clase <strong>${data.pub_titulo}</strong>. Uníte ahora a la videollamada.</p>
+      <div class="info-box">
+        <div class="label">Sala de videollamada</div>
+        <div class="value" style="font-family:monospace;font-size:13px;word-break:break-all">${data.jitsi_url}</div>
+      </div>
+      <p style="text-align:center;margin:24px 0;">
+        <a href="${data.jitsi_url}" class="btn">📹 Unirme a la clase →</a>
+      </p>
+      <p style="font-size:13px;color:${BRAND.muted};">También podés unirte desde la app en el tab <strong>💬 Chat</strong> → botón Videollamada.</p>
+    `, `${data.docente_nombre} inició la clase.`),
+  }),
+
 });
 
 // ── Handler principal ──────────────────────────────────────────────────────────

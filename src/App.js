@@ -1466,6 +1466,7 @@ function NotifPanel({session,open,onClose,onOpenDetail,onOpenCurso}){
     contraoferta:{icon:"🔄",color:"#F59E0B",label:"Contraoferta"},
     nuevo_mensaje:{icon:"💬",color:"#7B3FBE",label:"Mensaje nuevo"},
     chat_grupal:{icon:"💬",color:"#1A6ED8",label:"Mensaje en grupo"},
+    clase_iniciada:{icon:"📹",color:"#C80000",label:"¡Clase en vivo!"},
     nuevo_contenido:{icon:"📚",color:"#1A6ED8",label:"Nuevo contenido"},
     nuevo_ayudante:{icon:"🤝",color:"#2EC4A0",label:"Co-docente agregado"},
     valorar_curso:{icon:"⭐",color:"#F59E0B",label:"Valorar curso"},
@@ -1927,8 +1928,14 @@ export default function App(){
       setUnread(newUnread);
       setOfertasCount(ofertas.length);
       // Notifs para Mis inscripciones
-      const notifsInsc=(nfs||[]).filter(n=>["valorar_curso","nuevo_ayudante","busqueda_acordada","nuevo_contenido"].includes(n.tipo));
+      const notifsInsc=(nfs||[]).filter(n=>["valorar_curso","nuevo_ayudante","busqueda_acordada","nuevo_contenido","clase_iniciada"].includes(n.tipo));
       setNotifCount(notifsInsc.length);setNotifs(nfs||[]);
+      // Push urgente para clase en vivo
+      const claseViva=notifsInsc.filter(n=>n.tipo==="clase_iniciada"&&!n.leida);
+      if(claseViva.length>0&&window.__pushNotif){
+        const n=claseViva[0];
+        window.__pushNotif("📹 ¡Clase en vivo!",`${n.pub_titulo} — Uníte ahora`,{tag:`luderis-clase-${n.publicacion_id}`,pubId:n.publicacion_id});
+      }
       // Badge Mi Cuenta: notifs de ofertas/contras/inscripciones recibidas
       const notifsCuenta=(nfs||[]).filter(n=>["oferta_aceptada","oferta_rechazada","contraoferta","nueva_oferta","nueva_inscripcion","sistema"].includes(n.tipo));
       // Push para notificaciones nuevas

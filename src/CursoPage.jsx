@@ -313,30 +313,42 @@ function AyudanteBuscador({post,session,ayudantesActuales,onUpdate}){
 // ─── JITSI MODAL ─────────────────────────────────────────────────────────────
 function JitsiModal({roomName,displayName,onClose}){
   const room=roomName.replace(/[^a-zA-Z0-9]/g,"").slice(0,32)||"luderisclase";
-  const src=`https://meet.jit.si/${room}#userInfo.displayName="${encodeURIComponent(displayName)}"`;
+  const url=`https://meet.jit.si/${room}#userInfo.displayName="${encodeURIComponent(displayName)}"`;
+  const [copied,setCopied]=useState(false);
+  const copiar=()=>{try{navigator.clipboard.writeText(url);}catch{} setCopied(true);setTimeout(()=>setCopied(false),2000);};
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:700,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:12}} onClick={onClose}>
-      <div style={{width:"min(900px,98vw)",height:"min(620px,90vh)",background:"#1a1a2e",borderRadius:16,overflow:"hidden",display:"flex",flexDirection:"column",boxShadow:"0 20px 60px rgba(0,0,0,.5)"}} onClick={e=>e.stopPropagation()}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 16px",background:"#12122a",flexShrink:0}}>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontSize:18}}>📹</span>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:700,display:"flex",alignItems:"center",justifyContent:"center",padding:16,fontFamily:FONT}} onClick={onClose}>
+      <div style={{background:"#12122a",borderRadius:20,width:"min(480px,96vw)",overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,.6)"}} onClick={e=>e.stopPropagation()}>
+        {/* Header */}
+        <div style={{background:"linear-gradient(135deg,#0F3F7A,#1A6ED8)",padding:"24px 28px",position:"relative"}}>
+          <button onClick={onClose} style={{position:"absolute",top:12,right:14,background:"none",border:"none",color:"rgba(255,255,255,.6)",fontSize:22,cursor:"pointer",lineHeight:1}}>×</button>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <span style={{fontSize:36}}>📹</span>
             <div>
-              <div style={{color:"#fff",fontWeight:700,fontSize:14}}>Videollamada grupal</div>
-              <div style={{color:"rgba(255,255,255,.5)",fontSize:11}}>Sala: {room}</div>
+              <div style={{color:"#fff",fontWeight:800,fontSize:18}}>Videollamada grupal</div>
+              <div style={{color:"rgba(255,255,255,.6)",fontSize:12}}>Sala privada de Luderis</div>
             </div>
           </div>
-          <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            <span style={{fontSize:11,color:"rgba(255,255,255,.4)"}}>Powered by Jitsi</span>
-            <button onClick={onClose} style={{background:"none",border:"1px solid rgba(255,255,255,.2)",borderRadius:8,color:"rgba(255,255,255,.7)",fontSize:13,cursor:"pointer",padding:"5px 12px",fontFamily:FONT}}>✕ Salir</button>
-          </div>
         </div>
-        <iframe
-          src={src}
-          title="Videollamada"
-          allow="camera; microphone; display-capture; autoplay; fullscreen"
-          allowFullScreen
-          style={{flex:1,border:"none",width:"100%"}}
-        />
+        {/* Body */}
+        <div style={{padding:"24px 28px",display:"flex",flexDirection:"column",gap:16}}>
+          <div style={{background:"#1e1e3a",borderRadius:12,padding:"14px 16px",border:"1px solid rgba(255,255,255,.1)"}}>
+            <div style={{fontSize:10,color:"rgba(255,255,255,.4)",fontWeight:700,letterSpacing:.5,marginBottom:6}}>NOMBRE DE LA SALA</div>
+            <div style={{color:"#fff",fontSize:14,fontFamily:"monospace",wordBreak:"break-all"}}>{room}</div>
+          </div>
+          <p style={{color:"rgba(255,255,255,.55)",fontSize:13,margin:0,lineHeight:1.6}}>
+            La videollamada se abre en una nueva pestaña. Podés compartir el link con los participantes.
+          </p>
+          <a href={url} target="_blank" rel="noopener noreferrer"
+            style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"linear-gradient(135deg,#1A6ED8,#2EC4A0)",border:"none",borderRadius:12,color:"#fff",padding:"14px",fontWeight:700,fontSize:15,textDecoration:"none",textAlign:"center",boxShadow:"0 4px 16px rgba(26,110,216,.4)",cursor:"pointer"}}
+            onClick={onClose}>
+            📹 Abrir videollamada →
+          </a>
+          <button onClick={copiar}
+            style={{background:"none",border:"1px solid rgba(255,255,255,.15)",borderRadius:10,color:copied?"#2EC4A0":"rgba(255,255,255,.5)",padding:"10px",fontSize:13,cursor:"pointer",fontFamily:FONT,transition:"all .15s"}}>
+            {copied?"✓ Link copiado":"Copiar link para compartir"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -368,6 +380,7 @@ function ChatCurso({post,session,ayudantes=[],ayudanteEmails=[],onNewMessages}){
   const [escribiendo,setEscribiendo]=useState([]);// emails escribiendo
   const [imagenPrevia,setImagenPrevia]=useState(null);
   const [showJitsi,setShowJitsi]=useState(false);
+  const [resumen,setResumen]=useState(null);const [loadingResumen,setLoadingResumen]=useState(false);
   const miEmail=session.user.email;
   const bottomRef=useRef(null);
   const didScrollRef=useRef(false);
@@ -495,6 +508,18 @@ function ChatCurso({post,session,ayudantes=[],ayudanteEmails=[],onNewMessages}){
           <div style={{fontWeight:700,color:C.text,fontSize:14}}>Chat grupal</div>
           <div style={{fontSize:11,color:C.muted}}>{msgs.length} mensaje{msgs.length!==1?"s":""}</div>
         </div>
+        {/* Botón resumen IA */}
+        {msgs.length>=5&&<button onClick={async()=>{
+          setLoadingResumen(true);setResumen(null);
+          try{
+            const txt=msgs.slice(-60).filter(m=>!m.texto?.startsWith("[img]")).map(m=>`${m.de_nombre_display||m.de_nombre.split("@")[0]}: ${m.texto}`).join("\n");
+            const r=await sb.callIA("Sos un asistente educativo. Resumí de forma clara y concisa los puntos más importantes de esta conversación grupal de un curso, en español rioplatense. Usá viñetas (•). Máximo 5 puntos.",txt,400,session.access_token);
+            setResumen(r);
+          }catch(e){setResumen("No se pudo generar el resumen: "+e.message);}
+          finally{setLoadingResumen(false);}
+        }} style={{background:"#7B3FBE18",border:"1px solid #7B3FBE33",borderRadius:9,padding:"6px 11px",cursor:"pointer",color:"#7B3FBE",fontSize:11,fontWeight:700,fontFamily:FONT,flexShrink:0}}>
+          {loadingResumen?"…":"✨ Resumir"}
+        </button>}
         {/* Botón videollamada */}
         <button onClick={()=>setShowJitsi(true)}
           title="Iniciar videollamada grupal"
@@ -587,6 +612,17 @@ function ChatCurso({post,session,ayudantes=[],ayudanteEmails=[],onNewMessages}){
         <div ref={bottomRef}/>
       </div>
 
+      {/* Panel resumen IA */}
+      {(resumen||loadingResumen)&&(
+        <div style={{margin:"0 14px 8px",background:"linear-gradient(135deg,#7B3FBE12,#1A6ED812)",border:"1px solid #7B3FBE33",borderRadius:12,padding:"12px 14px",fontSize:12}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <span style={{fontWeight:700,color:"#7B3FBE",fontSize:12}}>✨ Resumen IA</span>
+            <button onClick={()=>setResumen(null)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:14,lineHeight:1}}>×</button>
+          </div>
+          {loadingResumen?<div style={{color:C.muted,fontSize:12}}>Generando resumen…</div>
+            :<div style={{color:C.text,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{resumen}</div>}
+        </div>
+      )}
       {/* Preview imagen */}
       {imagenPrevia&&(
         <div style={{padding:"6px 13px",display:"flex",alignItems:"center",gap:8,background:C.bg,borderTop:`1px solid ${C.border}`}}>
@@ -1653,6 +1689,518 @@ function AgendaPage({session,onOpenCurso}){
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// ─── NOTAS PRIVADAS ──────────────────────────────────────────────────────────
+// ─── PANEL DE PROGRESO DOCENTE ───────────────────────────────────────────────
+function ProgresoCurso({post,session}){
+  const [inscriptos,setInscriptos]=useState([]);
+  const [quizEntregas,setQuizEntregas]=useState([]);// flat list
+  const [evalEntregas,setEvalEntregas]=useState([]);
+  const [contenido,setContenido]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [busqueda,setBusqueda]=useState("");
+  const [ordenar,setOrdenar]=useState("nombre");// "nombre"|"quiz"|"eval"|"fecha"
+
+  useEffect(()=>{
+    (async()=>{
+      try{
+        const [ins,cont,evals]=await Promise.all([
+          sb.getInscripciones(post.id,session.access_token),
+          sb.getContenido(post.id,session.access_token),
+          sb.getEvaluaciones(post.id,session.access_token),
+        ]);
+        setInscriptos(ins||[]);
+        setContenido(cont||[]);
+        // Obtener quizzes (items de contenido tipo quiz) y todas sus entregas
+        const quizItems=(cont||[]).filter(c=>c.tipo==="quiz");
+        const evalIds=(evals||[]).map(e=>e.id);
+        const [qEntregas,evEntregas]=await Promise.all([
+          Promise.all(quizItems.map(q=>sb.getQuizEntregas(q.id,session.access_token).then(r=>r||[]))).then(rs=>rs.flat()),
+          Promise.all(evalIds.map(eid=>sb.getEvaluacionEntregas(eid,session.access_token).then(r=>r||[]))).then(rs=>rs.flat()),
+        ]);
+        setQuizEntregas(qEntregas);
+        setEvalEntregas(evEntregas);
+      }catch(e){console.error(e);}
+      setLoading(false);
+    })();
+  },[post.id,session.access_token]);
+
+  if(loading)return <div style={{padding:"40px",textAlign:"center"}}><Spinner/></div>;
+
+  // Construir mapa por alumno
+  const totalQuizzes=contenido.filter(c=>c.tipo==="quiz").length;
+  const alumnosData=inscriptos.map(ins=>{
+    const email=ins.alumno_email;
+    const nombre=ins.alumno_nombre||email.split("@")[0];
+    const qHechos=quizEntregas.filter(q=>q.alumno_email===email);
+    const qPct=totalQuizzes>0?Math.round((qHechos.length/totalQuizzes)*100):null;
+    const qPromedio=qHechos.length>0?Math.round(qHechos.reduce((s,q)=>s+(q.puntaje||0),0)/qHechos.length):null;
+    const eHechas=evalEntregas.filter(e=>e.alumno_email===email);
+    const eCalif=eHechas.filter(e=>e.calificacion!=null);
+    const ePromedio=eCalif.length>0?Math.round(eCalif.reduce((s,e)=>s+(e.calificacion||0),0)/eCalif.length):null;
+    const ultimaFecha=ins.created_at?new Date(ins.created_at):null;
+    return{email,nombre,qHechos:qHechos.length,qPct,qPromedio,eHechas:eHechas.length,eCalif:eCalif.length,ePromedio,ultimaFecha,inscripcion:ins};
+  });
+
+  const filtrados=alumnosData
+    .filter(a=>!busqueda||a.nombre.toLowerCase().includes(busqueda.toLowerCase())||a.email.toLowerCase().includes(busqueda.toLowerCase()))
+    .sort((a,b)=>{
+      if(ordenar==="nombre")return a.nombre.localeCompare(b.nombre);
+      if(ordenar==="quiz")return(b.qPct||0)-(a.qPct||0);
+      if(ordenar==="eval")return(b.ePromedio||0)-(a.ePromedio||0);
+      if(ordenar==="fecha")return(b.ultimaFecha||0)-(a.ultimaFecha||0);
+      return 0;
+    });
+
+  const totalQuizzesTotal=totalQuizzes;
+  const avgQuizPct=alumnosData.length>0&&totalQuizzesTotal>0?Math.round(alumnosData.reduce((s,a)=>s+(a.qPct||0),0)/alumnosData.length):null;
+
+  return(
+    <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden"}}>
+      {/* Header */}
+      <div style={{padding:"14px 18px",borderBottom:`1px solid ${C.border}`,background:C.surface}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+          <span style={{fontSize:20}}>📊</span>
+          <div style={{flex:1}}>
+            <div style={{fontWeight:700,color:C.text,fontSize:14}}>Panel de progreso</div>
+            <div style={{fontSize:11,color:C.muted}}>{inscriptos.length} alumnos inscriptos</div>
+          </div>
+        </div>
+        {/* Stats resumen */}
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
+          {[
+            {label:"Inscriptos",value:inscriptos.length,icon:"👥"},
+            {label:"Quizzes totales",value:totalQuizzesTotal,icon:"📝"},
+            {label:"Promedio quiz",value:avgQuizPct!=null?`${avgQuizPct}%`:"—",icon:"📈"},
+          ].map(s=>(
+            <div key={s.label} style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:9,padding:"8px 13px",flex:1,minWidth:90}}>
+              <div style={{fontSize:10,color:C.muted,marginBottom:2}}>{s.icon} {s.label}</div>
+              <div style={{fontWeight:700,color:C.text,fontSize:16}}>{s.value}</div>
+            </div>
+          ))}
+        </div>
+        {/* Buscar + ordenar */}
+        <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+          <input value={busqueda} onChange={e=>setBusqueda(e.target.value)} placeholder="Buscar alumno…"
+            style={{flex:1,minWidth:120,background:C.bg,border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 11px",color:C.text,fontSize:12,fontFamily:FONT,outline:"none"}}/>
+          <select value={ordenar} onChange={e=>setOrdenar(e.target.value)}
+            style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 10px",color:C.text,fontSize:12,fontFamily:FONT,outline:"none",cursor:"pointer"}}>
+            <option value="nombre">Ordenar: Nombre</option>
+            <option value="quiz">Ordenar: % Quiz</option>
+            <option value="eval">Ordenar: Nota eval</option>
+            <option value="fecha">Ordenar: Inscripción</option>
+          </select>
+        </div>
+      </div>
+      {/* Lista alumnos */}
+      <div style={{maxHeight:480,overflowY:"auto"}}>
+        {filtrados.length===0?(
+          <div style={{padding:"32px",textAlign:"center",color:C.muted,fontSize:13}}>{inscriptos.length===0?"Nadie inscripto aún.":"No hay resultados."}</div>
+        ):filtrados.map((a,i)=>(
+          <div key={a.email} style={{padding:"12px 18px",borderBottom:i<filtrados.length-1?`1px solid ${C.border}`:"none",display:"flex",gap:12,alignItems:"center"}}>
+            <Avatar letra={a.nombre[0]} size={34}/>
+            <div style={{flex:1,overflow:"hidden"}}>
+              <div style={{fontWeight:600,color:C.text,fontSize:13,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{a.nombre}</div>
+              <div style={{fontSize:11,color:C.muted,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{a.email}</div>
+            </div>
+            {/* Métricas */}
+            <div style={{display:"flex",gap:8,flexShrink:0,alignItems:"center"}}>
+              {totalQuizzesTotal>0&&(
+                <div style={{textAlign:"center",minWidth:54}}>
+                  <div style={{fontSize:10,color:C.muted,marginBottom:2}}>Quiz</div>
+                  <div style={{fontWeight:700,color:a.qPct>=70?C.success:a.qPct>=40?C.accent:C.muted,fontSize:13}}>{a.qPct!=null?`${a.qPct}%`:"—"}</div>
+                  {totalQuizzesTotal>0&&<div style={{width:50,height:3,background:C.border,borderRadius:2,marginTop:2}}><div style={{height:"100%",width:`${a.qPct||0}%`,background:a.qPct>=70?C.success:C.accent,borderRadius:2}}/></div>}
+                </div>
+              )}
+              {a.eHechas>0&&(
+                <div style={{textAlign:"center",minWidth:54}}>
+                  <div style={{fontSize:10,color:C.muted,marginBottom:2}}>Nota</div>
+                  <div style={{fontWeight:700,color:a.ePromedio>=6?C.success:C.danger,fontSize:13}}>{a.ePromedio!=null?a.ePromedio:"Pend."}</div>
+                </div>
+              )}
+              <div style={{textAlign:"center",minWidth:40}}>
+                <div style={{fontSize:10,color:C.muted,marginBottom:2}}>Insc.</div>
+                <div style={{fontSize:11,color:C.muted}}>{a.ultimaFecha?fmtRel(a.ultimaFecha):"—"}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── FLASHCARDS CON IA ───────────────────────────────────────────────────────
+const FC_KEY=(postId)=>`cl_flashcards_${postId}`;
+function FlashcardsDeck({cards,onDelete}){
+  const [idx,setIdx]=useState(0);const [flip,setFlip]=useState(false);const [done,setDone]=useState([]);
+  if(!cards||cards.length===0)return null;
+  const remaining=cards.filter((_,i)=>!done.includes(i));
+  if(remaining.length===0)return(
+    <div style={{textAlign:"center",padding:"32px 0"}}>
+      <div style={{fontSize:36,marginBottom:10}}>🎉</div>
+      <div style={{fontWeight:700,color:C.text,fontSize:16,marginBottom:6}}>¡Completaste todas las flashcards!</div>
+      <button onClick={()=>setDone([])} style={{background:C.accent,border:"none",borderRadius:10,color:"#fff",padding:"9px 20px",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:FONT}}>Volver a empezar</button>
+    </div>
+  );
+  const realIdx=cards.indexOf(remaining[idx%remaining.length]);
+  const card=cards[realIdx];
+  return(
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:14,padding:"10px 0"}}>
+      <div style={{fontSize:12,color:C.muted}}>{remaining.length} restantes · {done.length} completadas</div>
+      {/* Card */}
+      <div onClick={()=>setFlip(f=>!f)} style={{width:"100%",maxWidth:460,minHeight:160,background:flip?C.accentDim:C.surface,border:`2px solid ${flip?C.accent:C.border}`,borderRadius:18,padding:"28px 24px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 20px rgba(0,0,0,.07)",transition:"all .2s",position:"relative"}}>
+        <div style={{textAlign:"center"}}>
+          <div style={{fontSize:10,color:C.muted,fontWeight:700,letterSpacing:.5,marginBottom:8,textTransform:"uppercase"}}>{flip?"RESPUESTA":"PREGUNTA"} · click para voltear</div>
+          <div style={{fontSize:15,color:C.text,fontWeight:flip?500:700,lineHeight:1.6}}>{flip?card.respuesta:card.pregunta}</div>
+        </div>
+        {onDelete&&<button onClick={e=>{e.stopPropagation();onDelete(realIdx);}} style={{position:"absolute",top:8,right:10,background:"none",border:"none",color:C.muted,fontSize:16,cursor:"pointer",opacity:.5}} title="Eliminar">×</button>}
+      </div>
+      {/* Controles */}
+      <div style={{display:"flex",gap:10}}>
+        <button onClick={()=>{setDone(d=>[...d,realIdx]);setFlip(false);if(idx>=remaining.length-1)setIdx(0);}} style={{background:"#2EC4A020",border:"1px solid #2EC4A050",borderRadius:10,color:"#0F6E56",padding:"8px 18px",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:FONT}}>✓ La sabía</button>
+        <button onClick={()=>{setFlip(false);setIdx(i=>(i+1)%remaining.length);}} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,color:C.muted,padding:"8px 18px",cursor:"pointer",fontSize:13,fontFamily:FONT}}>→ Siguiente</button>
+      </div>
+      {/* Miniprogress */}
+      <div style={{width:"100%",maxWidth:460,height:4,background:C.border,borderRadius:2}}>
+        <div style={{height:"100%",width:`${(done.length/cards.length)*100}%`,background:C.accent,borderRadius:2,transition:"width .4s"}}/>
+      </div>
+    </div>
+  );
+}
+
+function Flashcards({post,session,esMio,esAyudante}){
+  const [cards,setCards]=useState(()=>{try{return JSON.parse(localStorage.getItem(FC_KEY(post.id))||"[]");}catch{return[];}});
+  const [generando,setGenerando]=useState(false);
+  const [tema,setTema]=useState("");
+  const [modo,setModo]=useState("repaso");// "repaso"|"agregar"
+  const [manualP,setManualP]=useState("");const [manualR,setManualR]=useState("");
+
+  const save=(c)=>{setCards(c);try{localStorage.setItem(FC_KEY(post.id),JSON.stringify(c));}catch{}};
+
+  const generarConIA=async()=>{
+    const contexto=tema.trim()||post.titulo;
+    setGenerando(true);
+    try{
+      const prompt=`Generá exactamente 8 flashcards de estudio sobre "${contexto}" para el curso "${post.titulo}". Devolvé SOLO un array JSON válido con objetos {pregunta,respuesta}. Sin texto extra, solo el JSON. Máximo 120 caracteres por campo. Usá español rioplatense.`;
+      const r=await sb.callIA("Sos un experto generador de flashcards educativas.",prompt,600,session.access_token);
+      const match=r.match(/\[[\s\S]*\]/);
+      if(!match)throw new Error("IA no devolvió JSON");
+      const nuevas=JSON.parse(match[0]);
+      if(!Array.isArray(nuevas)||!nuevas[0]?.pregunta)throw new Error("Formato incorrecto");
+      save([...cards,...nuevas.slice(0,8)]);
+      setTema("");setModo("repaso");
+      toast(`✨ ${nuevas.slice(0,8).length} flashcards generadas`,"success");
+    }catch(e){toast("Error al generar: "+e.message,"error");}
+    setGenerando(false);
+  };
+
+  const agregarManual=()=>{
+    if(!manualP.trim()||!manualR.trim())return;
+    save([...cards,{pregunta:manualP.trim(),respuesta:manualR.trim()}]);
+    setManualP("");setManualR("");
+  };
+
+  const eliminar=(i)=>{const c=[...cards];c.splice(i,1);save(c);};
+
+  const iS={background:C.bg,border:`1px solid ${C.border}`,borderRadius:9,padding:"9px 13px",color:C.text,fontSize:13,fontFamily:FONT,width:"100%",boxSizing:"border-box",outline:"none",marginBottom:8};
+
+  return(
+    <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden"}}>
+      {/* Header */}
+      <div style={{padding:"12px 16px",borderBottom:`1px solid ${C.border}`,background:C.surface,display:"flex",alignItems:"center",gap:10}}>
+        <span style={{fontSize:18}}>🃏</span>
+        <div style={{flex:1}}>
+          <div style={{fontWeight:700,color:C.text,fontSize:14}}>Flashcards</div>
+          <div style={{fontSize:11,color:C.muted}}>{cards.length} tarjetas · repaso con spaced repetition</div>
+        </div>
+        <div style={{display:"flex",gap:6}}>
+          <button onClick={()=>setModo(m=>m==="repaso"?"agregar":"repaso")}
+            style={{background:modo==="agregar"?C.accentDim:"none",border:`1px solid ${modo==="agregar"?C.accent:C.border}`,borderRadius:8,color:modo==="agregar"?C.accent:C.muted,padding:"5px 10px",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:FONT}}>
+            {modo==="agregar"?"← Repasar":"+ Agregar"}
+          </button>
+          {cards.length>0&&<button onClick={()=>{if(window.confirm("¿Borrar todas las flashcards?"))save([]);}}
+            style={{background:"none",border:`1px solid ${C.border}`,borderRadius:8,color:C.muted,padding:"5px 10px",cursor:"pointer",fontSize:11,fontFamily:FONT}}>
+            🗑 Borrar todo
+          </button>}
+        </div>
+      </div>
+
+      <div style={{padding:"16px 18px"}}>
+        {modo==="repaso"?(
+          cards.length===0?(
+            <div style={{textAlign:"center",padding:"32px 0",color:C.muted}}>
+              <div style={{fontSize:32,marginBottom:10}}>🃏</div>
+              <div style={{fontSize:14,marginBottom:16}}>No tenés flashcards aún.</div>
+              <button onClick={()=>setModo("agregar")} style={{background:C.accent,border:"none",borderRadius:10,color:"#fff",padding:"9px 20px",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:FONT}}>Crear flashcards</button>
+            </div>
+          ):<FlashcardsDeck cards={cards} onDelete={eliminar}/>
+        ):(
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            {/* Generador IA */}
+            <div style={{background:"#7B3FBE10",border:"1px solid #7B3FBE30",borderRadius:12,padding:"14px 16px"}}>
+              <div style={{fontWeight:700,color:"#7B3FBE",fontSize:13,marginBottom:8}}>✨ Generar con IA</div>
+              <input value={tema} onChange={e=>setTema(e.target.value)} placeholder={`Tema a estudiar (ej: "derivadas", "fotosíntesis")`} style={{...iS,marginBottom:8}}/>
+              <button onClick={generarConIA} disabled={generando}
+                style={{background:"linear-gradient(135deg,#7B3FBE,#1A6ED8)",border:"none",borderRadius:9,color:"#fff",padding:"9px 18px",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:FONT,opacity:generando?.6:1,width:"100%"}}>
+                {generando?"Generando…":"✨ Generar 8 flashcards"}
+              </button>
+            </div>
+            {/* Manual */}
+            <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px"}}>
+              <div style={{fontWeight:700,color:C.text,fontSize:13,marginBottom:8}}>✍ Agregar manual</div>
+              <input value={manualP} onChange={e=>setManualP(e.target.value)} placeholder="Pregunta" style={iS}/>
+              <input value={manualR} onChange={e=>setManualR(e.target.value)} placeholder="Respuesta" style={iS}
+                onKeyDown={e=>e.key==="Enter"&&agregarManual()}/>
+              <button onClick={agregarManual} disabled={!manualP.trim()||!manualR.trim()}
+                style={{background:C.accent,border:"none",borderRadius:9,color:"#fff",padding:"9px 18px",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:FONT,opacity:(!manualP.trim()||!manualR.trim())?.4:1}}>
+                Agregar tarjeta
+              </button>
+            </div>
+            {/* Lista existentes */}
+            {cards.length>0&&(
+              <div>
+                <div style={{fontSize:12,color:C.muted,fontWeight:700,marginBottom:8}}>TARJETAS EXISTENTES ({cards.length})</div>
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  {cards.map((c,i)=>(
+                    <div key={i} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,padding:"8px 12px",display:"flex",gap:10,alignItems:"flex-start"}}>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:12,fontWeight:700,color:C.text}}>{c.pregunta}</div>
+                        <div style={{fontSize:11,color:C.muted,marginTop:2}}>{c.respuesta}</div>
+                      </div>
+                      <button onClick={()=>eliminar(i)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:14,flexShrink:0}}>×</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NotasPrivadas({storageKey,session,post}){
+  const [nota,setNota]=useState(()=>{try{return localStorage.getItem(storageKey)||"";}catch{return"";}});
+  const [saved,setSaved]=useState(true);
+  const [expandiendoIA,setExpandiendoIA]=useState(false);
+  const timerRef=useRef(null);
+
+  const onChange=(v)=>{
+    setNota(v);setSaved(false);
+    clearTimeout(timerRef.current);
+    timerRef.current=setTimeout(()=>{
+      try{localStorage.setItem(storageKey,v);setSaved(true);}catch{}
+    },800);
+  };
+
+  const expandirConIA=async()=>{
+    if(!nota.trim())return;
+    setExpandiendoIA(true);
+    try{
+      const r=await sb.callIA(
+        `Sos un asistente educativo. El alumno tomó las siguientes notas del curso "${post.titulo}". Expandilas, completalas y organizalas mejor manteniendo el estilo personal. Conservá el contenido original y agregá contexto útil. Usá español rioplatense.`,
+        nota,600,session.access_token
+      );
+      onChange(nota+"\n\n---\n✨ Expansión IA:\n"+r);
+    }catch(e){alert("Error IA: "+e.message);}finally{setExpandiendoIA(false);}
+  };
+
+  return(
+    <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden"}}>
+      <div style={{padding:"12px 16px",borderBottom:`1px solid ${C.border}`,background:C.surface,display:"flex",alignItems:"center",gap:10}}>
+        <span style={{fontSize:18}}>📝</span>
+        <div style={{flex:1}}>
+          <div style={{fontWeight:700,color:C.text,fontSize:14}}>Mis notas</div>
+          <div style={{fontSize:11,color:C.muted}}>Privadas · solo vos las ves</div>
+        </div>
+        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+          <span style={{fontSize:10,color:saved?C.success:C.muted}}>{saved?"✓ Guardado":"Guardando…"}</span>
+          <button onClick={expandirConIA} disabled={expandiendoIA||!nota.trim()}
+            style={{background:"#7B3FBE18",border:"1px solid #7B3FBE33",borderRadius:8,color:"#7B3FBE",padding:"5px 10px",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:FONT,opacity:!nota.trim()?.5:1}}>
+            {expandiendoIA?"…":"✨ Expandir con IA"}
+          </button>
+        </div>
+      </div>
+      <textarea
+        value={nota}
+        onChange={e=>onChange(e.target.value)}
+        placeholder={`Tomá notas sobre "${post.titulo}"…\n\nSolo vos podés verlas. Guardado automático.`}
+        style={{width:"100%",minHeight:380,background:C.bg,border:"none",padding:"16px 18px",color:C.text,fontSize:13,fontFamily:FONT,resize:"vertical",outline:"none",boxSizing:"border-box",lineHeight:1.7}}
+      />
+    </div>
+  );
+}
+
+// ─── Q&A DEL CURSO ───────────────────────────────────────────────────────────
+function QACurso({post,session,esMio,esAyudante}){
+  const [preguntas,setPreguntas]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [texto,setTexto]=useState("");
+  const [enviando,setEnviando]=useState(false);
+  const [expandida,setExpandida]=useState(null);
+  const [respTexto,setRespTexto]=useState({});
+  const [respuestas,setRespuestas]=useState({});
+  const [generandoIA,setGenerandoIA]=useState(null);
+  const miEmail=session.user.email;
+  const miNombre=sb.getDisplayName(miEmail)||miEmail.split("@")[0];
+  const esStaff=esMio||esAyudante;
+
+  const cargar=useCallback(async()=>{
+    try{
+      const data=await sb.getForoPosts(post.id,session.access_token).catch(()=>[]);
+      // Filtramos por tipo qa (texto empieza con "[qa]") o todos si no hay foro separado
+      const qa=(data||[]).filter(p=>p.texto?.startsWith("[qa]"));
+      setPreguntas(qa.map(p=>({...p,texto:p.texto.replace("[qa]","").trim()})));
+    }finally{setLoading(false);}
+  },[post.id,session.access_token]);
+
+  useEffect(()=>{cargar();},[cargar]);
+
+  const enviar=async()=>{
+    if(!texto.trim())return;
+    setEnviando(true);
+    try{
+      await sb.insertForoPost({publicacion_id:post.id,autor_email:miEmail,autor_nombre:miNombre,texto:"[qa] "+texto.trim()},session.access_token);
+      setTexto("");await cargar();
+    }catch(e){alert(e.message);}finally{setEnviando(false);}
+  };
+
+  const cargarResp=async(postId)=>{
+    if(respuestas[postId])return;
+    const r=await sb.getForoRespuestas(postId,session.access_token).catch(()=>[]);
+    setRespuestas(prev=>({...prev,[postId]:r||[]}));
+  };
+
+  const toggle=async(id)=>{
+    if(expandida===id){setExpandida(null);return;}
+    setExpandida(id);await cargarResp(id);
+  };
+
+  const responder=async(postId)=>{
+    const txt=(respTexto[postId]||"").trim();if(!txt)return;
+    try{
+      await sb.insertForoRespuesta({foro_post_id:postId,publicacion_id:post.id,autor_email:miEmail,autor_nombre:miNombre,texto:txt},session.access_token);
+      setRespTexto(p=>({...p,[postId]:""}));
+      const r=await sb.getForoRespuestas(postId,session.access_token).catch(()=>[]);
+      setRespuestas(prev=>({...prev,[postId]:r||[]}));
+    }catch(e){alert(e.message);}
+  };
+
+  const responderConIA=async(postId,preguntaTxt)=>{
+    setGenerandoIA(postId);
+    try{
+      const r=await sb.callIA(
+        `Sos un asistente educativo experto. Respondé esta pregunta de un alumno del curso "${post.titulo}" de forma clara, concisa y educativa. Máximo 3 párrafos. Usá español rioplatense.`,
+        preguntaTxt,400,session.access_token
+      );
+      setRespTexto(p=>({...p,[postId]:r}));
+    }catch(e){alert("Error IA: "+e.message);}finally{setGenerandoIA(null);}
+  };
+
+  return(
+    <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden"}}>
+      {/* Header */}
+      <div style={{padding:"12px 16px",borderBottom:`1px solid ${C.border}`,background:C.surface,display:"flex",alignItems:"center",gap:10}}>
+        <span style={{fontSize:18}}>❓</span>
+        <div style={{flex:1}}>
+          <div style={{fontWeight:700,color:C.text,fontSize:14}}>Preguntas y Respuestas</div>
+          <div style={{fontSize:11,color:C.muted}}>{preguntas.length} pregunta{preguntas.length!==1?"s":""} · las respuestas benefician a todos</div>
+        </div>
+      </div>
+
+      {/* Hacer pregunta */}
+      <div style={{padding:"12px 14px",borderBottom:`1px solid ${C.border}`,display:"flex",gap:8}}>
+        <textarea value={texto} onChange={e=>setTexto(e.target.value)}
+          onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();enviar();}}}
+          placeholder="Escribí tu pregunta… (visible para todos los inscriptos)"
+          rows={2}
+          style={{flex:1,background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:"8px 12px",color:C.text,fontSize:13,fontFamily:FONT,resize:"none",outline:"none"}}/>
+        <button onClick={enviar} disabled={!texto.trim()||enviando}
+          style={{background:C.accent,border:"none",borderRadius:10,color:"#fff",padding:"8px 14px",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:FONT,alignSelf:"flex-end",opacity:!texto.trim()?.4:1}}>
+          {enviando?"…":"Preguntar"}
+        </button>
+      </div>
+
+      {/* Lista preguntas */}
+      <div style={{maxHeight:480,overflowY:"auto"}}>
+        {loading?<div style={{padding:"24px",display:"flex",justifyContent:"center"}}><Spinner/></div>
+          :preguntas.length===0
+            ?<div style={{padding:"32px",textAlign:"center",color:C.muted,fontSize:13}}>
+                <div style={{fontSize:32,marginBottom:8}}>🙋</div>
+                Todavía no hay preguntas. ¡Sé el primero en consultar!
+              </div>
+            :preguntas.map((p,i)=>{
+              const abierta=expandida===p.id;
+              const resps=respuestas[p.id]||[];
+              const tieneRespuesta=resps.length>0;
+              return(
+                <div key={p.id||i} style={{borderBottom:`1px solid ${C.border}`}}>
+                  <div onClick={()=>toggle(p.id)}
+                    style={{padding:"12px 14px",cursor:"pointer",display:"flex",gap:10,alignItems:"flex-start",background:abierta?C.accentDim:"transparent",transition:"background .12s"}}
+                    onMouseEnter={e=>{if(!abierta)e.currentTarget.style.background=C.bg;}}
+                    onMouseLeave={e=>{if(!abierta)e.currentTarget.style.background="transparent";}}>
+                    <div style={{width:28,height:28,borderRadius:"50%",background:tieneRespuesta?"#2EC4A015":"#F59E0B15",border:`1px solid ${tieneRespuesta?"#2EC4A044":"#F59E0B44"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>
+                      {tieneRespuesta?"✓":"?"}
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:13,color:C.text,fontWeight:abierta?700:400,lineHeight:1.5}}>{p.texto}</div>
+                      <div style={{fontSize:10,color:C.muted,marginTop:3}}>
+                        {p.autor_nombre||p.autor_email?.split("@")[0]} · {fmtRel(p.created_at)}
+                        {tieneRespuesta&&<span style={{color:C.success,marginLeft:8,fontWeight:600}}>· {resps.length} respuesta{resps.length!==1?"s":""}</span>}
+                      </div>
+                    </div>
+                    <span style={{color:C.muted,fontSize:12,flexShrink:0,marginTop:2}}>{abierta?"▲":"▼"}</span>
+                  </div>
+
+                  {abierta&&(
+                    <div style={{background:C.bg,padding:"10px 14px 14px 52px",borderTop:`1px solid ${C.border}`}}>
+                      {/* Respuestas */}
+                      {resps.map((r,ri)=>{
+                        const esDoc=r.autor_email===post.autor_email;
+                        return(
+                          <div key={ri} style={{marginBottom:10,padding:"10px 12px",background:esDoc?"#2EC4A010":C.surface,border:`1px solid ${esDoc?"#2EC4A033":C.border}`,borderRadius:10}}>
+                            <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:5}}>
+                              <Avatar letra={(r.autor_nombre||"?")[0]} size={20}/>
+                              <span style={{fontSize:12,fontWeight:700,color:esDoc?C.success:C.text}}>{r.autor_nombre||r.autor_email?.split("@")[0]}</span>
+                              {esDoc&&<span style={{fontSize:9,background:"#2EC4A015",color:C.success,borderRadius:20,padding:"1px 6px",border:"1px solid #2EC4A033",fontWeight:700}}>Docente</span>}
+                              <span style={{fontSize:10,color:C.muted,marginLeft:"auto"}}>{fmtRel(r.created_at)}</span>
+                            </div>
+                            <div style={{fontSize:13,color:C.text,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{r.texto}</div>
+                          </div>
+                        );
+                      })}
+
+                      {/* Caja responder */}
+                      <div style={{marginTop:8,display:"flex",gap:7,flexDirection:"column"}}>
+                        <textarea value={respTexto[p.id]||""} onChange={e=>setRespTexto(prev=>({...prev,[p.id]:e.target.value}))}
+                          placeholder={esStaff?"Respondé esta pregunta…":"Agregá información adicional…"}
+                          rows={2}
+                          style={{width:"100%",background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,padding:"8px 12px",color:C.text,fontSize:12,fontFamily:FONT,resize:"none",outline:"none",boxSizing:"border-box"}}/>
+                        <div style={{display:"flex",gap:6}}>
+                          {esStaff&&(
+                            <button onClick={()=>responderConIA(p.id,p.texto)} disabled={generandoIA===p.id}
+                              style={{background:"#7B3FBE18",border:"1px solid #7B3FBE33",borderRadius:8,color:"#7B3FBE",padding:"6px 12px",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:FONT}}>
+                              {generandoIA===p.id?"Generando…":"✨ Sugerir con IA"}
+                            </button>
+                          )}
+                          <button onClick={()=>responder(p.id)} disabled={!(respTexto[p.id]||"").trim()}
+                            style={{background:C.accent,border:"none",borderRadius:8,color:"#fff",padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:FONT,marginLeft:"auto",opacity:!(respTexto[p.id]||"").trim()?.4:1}}>
+                            Responder
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+        }
+      </div>
     </div>
   );
 }
@@ -3584,8 +4132,37 @@ function CursoPage({post,session,onClose,onUpdatePost}){
   const [showExamenFinal,setShowExamenFinal]=useState(()=>false);
   const [tabActivo,setTabActivo]=useState(()=>{if(post._openValidacion)return"evaluaciones";try{return sessionStorage.getItem("curso_tab_"+post.id)||"contenido";}catch{return "contenido";}});
   const setTab=(t)=>{try{sessionStorage.setItem("curso_tab_"+post.id,t);}catch{}if(t==="chat"){setMensajesNuevos(0);try{sessionStorage.setItem("chat_seen_"+post.id,Date.now());}catch{}}setTabActivo(t);};const [nuevoTipo,setNuevoTipo]=useState("video");const [nuevoTitulo,setNuevoTitulo]=useState("");const [nuevoUrl,setNuevoUrl]=useState("");const [nuevoTexto,setNuevoTexto]=useState("");const [savingC,setSavingC]=useState(false);
-  const [calExpanded,setCalExpanded]=useState(false);const [showEditCal,setShowEditCal]=useState(false);const [showFinalizar,setShowFinalizar]=useState(false);const [showDenuncia,setShowDenuncia]=useState(false);const [showCerrarInsc,setShowCerrarInsc]=useState(false);const [localFinalizado,setLocalFinalizado]=useState(!!post.finalizado);const [localCerrado,setLocalCerrado]=useState(!!post.inscripciones_cerradas);const refreshPost=async()=>{try{const pubs=await sb.getMisPublicaciones(post.autor_email,session.access_token);const fresh=pubs.find(p=>p.id===post.id);if(fresh&&onUpdatePost)onUpdatePost(fresh);}catch{}};
+  const [calExpanded,setCalExpanded]=useState(false);const [showEditCal,setShowEditCal]=useState(false);const [showFinalizar,setShowFinalizar]=useState(false);const [showDenuncia,setShowDenuncia]=useState(false);const [showCerrarInsc,setShowCerrarInsc]=useState(false);const [localFinalizado,setLocalFinalizado]=useState(!!post.finalizado);const [localCerrado,setLocalCerrado]=useState(!!post.inscripciones_cerradas);
+  const [claseActiva,setClaseActiva]=useState(false);const [iniciandoClase,setIniciandoClase]=useState(false);
+  const [showJitsiCurso,setShowJitsiCurso]=useState(false);
+  const jitsiRoomCurso=`luderis${post.id.replace(/-/g,"").slice(0,20)}`;
+  const docenteDisplayName=sb.getDisplayName(miEmail)||miEmail.split("@")[0];const refreshPost=async()=>{try{const pubs=await sb.getMisPublicaciones(post.autor_email,session.access_token);const fresh=pubs.find(p=>p.id===post.id);if(fresh&&onUpdatePost)onUpdatePost(fresh);}catch{}};
   const esMio=post.autor_email===session.user.email||post.autor_id===session.user.id;const miEmail=session.user.email;const miUid=session.user.id;
+  const iniciarClase=async()=>{
+    setIniciandoClase(true);
+    try{
+      const inscs=await sb.getInscripciones(post.id,session.access_token).catch(()=>[]);
+      const emails=inscs.map(i=>i.alumno_email).filter(Boolean);
+      const jitsiUrl=`https://meet.jit.si/${jitsiRoomCurso}`;
+      let enviados=0;
+      // Notificaciones in-app + emails a todos los inscriptos
+      for(const email of emails){
+        try{
+          await sb.insertNotificacion({usuario_id:null,alumno_email:email,tipo:"clase_iniciada",publicacion_id:post.id,pub_titulo:post.titulo,leida:false},session.access_token);
+          await sb.sendEmail("clase_iniciada",email,{pub_titulo:post.titulo,docente_nombre:docenteDisplayName,jitsi_url:jitsiUrl},session.access_token);
+          enviados++;
+        }catch(e){console.warn("Error notif a",email,e.message);}
+      }
+      setClaseActiva(true);
+      setShowJitsiCurso(true);
+      if(emails.length===0){
+        toast("Clase iniciada. No hay alumnos inscriptos todavía.","info",4000);
+      } else {
+        toast(`Clase iniciada · ${enviados}/${emails.length} alumno${emails.length!==1?"s":""} notificado${enviados!==1?"s":""}. ✓`,"success",5000);
+      }
+    }catch(e){alert("Error al iniciar la clase: "+e.message);}
+    finally{setIniciandoClase(false);}
+  };
   const [needsValoracion,setNeedsValoracion]=useState(false);
   // ayudantes es uuid[] — comparar con el UUID del usuario actual
   const esAyudante=(post.ayudantes||[]).includes(miUid);
@@ -3694,12 +4271,28 @@ function CursoPage({post,session,onClose,onUpdatePost}){
   const iS={width:"100%",background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,padding:"9px 12px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box",fontFamily:FONT,marginBottom:8};
   return(
     <div  ref={pageRef} style={{position:"fixed",inset:0,background:C.bg,zIndex:300,overflowY:"auto",fontFamily:FONT}}>
+      {showJitsiCurso&&<JitsiModal roomName={jitsiRoomCurso} displayName={docenteDisplayName} onClose={()=>setShowJitsiCurso(false)}/>}
+      {/* Banner "Clase en vivo" para alumnos */}
+      {claseActiva&&!esMio&&(
+        <div style={{background:"linear-gradient(135deg,#C8000015,#E0000022)",borderBottom:"1px solid #C8000033",padding:"10px 16px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,flex:1}}>
+            <span style={{width:8,height:8,borderRadius:"50%",background:"#E05C5C",display:"inline-block",animation:"pulse 1s infinite"}}/>
+            <span style={{fontWeight:700,color:"#C80000",fontSize:13}}>Clase en vivo ahora</span>
+            <span style={{color:"#C80000",fontSize:12,opacity:.8}}>{docenteDisplayName||post.autor_nombre} está esperándote</span>
+          </div>
+          <button onClick={()=>setShowJitsiCurso(true)} style={{background:"#C80000",border:"none",borderRadius:9,color:"#fff",padding:"7px 16px",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:FONT,display:"flex",alignItems:"center",gap:6}}>📹 Unirme ahora</button>
+        </div>
+      )}
       <div style={{position:"sticky",top:0,zIndex:10,background:C.sidebar,borderBottom:`1px solid ${C.border}`,padding:"10px 14px",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
         <button onClick={onClose} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,color:C.text,padding:"7px 12px",cursor:"pointer",fontSize:13,fontFamily:FONT}}>← Volver</button>
         <div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,color:C.text,fontSize:15,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.titulo}</div><div style={{fontSize:11,color:C.muted}}>{post.materia} · {post.autor_nombre||safeDisplayName(post.autor_nombre,post.autor_email)}</div></div>
         <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
           {esMio&&!localFinalizado&&!localCerrado&&<button onClick={()=>setShowCerrarInsc(true)} style={{background:"#E0955C15",border:"1px solid #E0955C33",borderRadius:9,color:C.warn,padding:"6px 12px",cursor:"pointer",fontSize:12,fontFamily:FONT,fontWeight:600}}>Cerrar inscripciones</button>}
           {esMio&&!localFinalizado&&localCerrado&&<button onClick={async()=>{try{await sb.updatePublicacion(post.id,{inscripciones_cerradas:false},session.access_token);post.inscripciones_cerradas=false;post.inscripcionesCerradas=false;setLocalCerrado(false);if(onUpdatePost)onUpdatePost({...post,inscripciones_cerradas:false});}catch(e){alert("Error: "+e.message);}}} style={{background:"#4ECB7115",border:"1px solid #4ECB7133",borderRadius:9,color:C.success,padding:"6px 12px",cursor:"pointer",fontSize:12,fontFamily:FONT,fontWeight:600}}>Reabrir inscripciones</button>}
+          {esMio&&!localFinalizado&&<button onClick={claseActiva?()=>setShowJitsiCurso(true):iniciarClase} disabled={iniciandoClase}
+            style={{background:claseActiva?"#C8000018":"linear-gradient(135deg,#1A6ED8,#2EC4A0)",border:claseActiva?"1px solid #C8000044":"none",borderRadius:9,color:claseActiva?"#C80000":"#fff",padding:"6px 12px",cursor:"pointer",fontSize:12,fontFamily:FONT,fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
+            {claseActiva?<><span style={{width:6,height:6,borderRadius:"50%",background:"#C80000",animation:"pulse 1s infinite",display:"inline-block"}}/>Clase en vivo</>:iniciandoClase?"Iniciando…":"▶ Iniciar clase"}
+          </button>}
           {(esMio||esAyudante)&&!localFinalizado&&<button onClick={()=>setShowFinalizar(true)} style={{background:"#4ECB7122",border:"1px solid #4ECB7144",borderRadius:9,color:C.success,padding:"6px 12px",cursor:"pointer",fontSize:12,fontFamily:FONT,fontWeight:600}}>Finalizar clase</button>}
           {localFinalizado&&(esMio||esAyudante)&&<span style={{fontSize:12,color:C.info,fontWeight:600}}>Clase finalizada</span>}
           {!esMio&&inscripcion&&<button onClick={()=>setShowDenuncia(true)} style={{background:"#E05C5C15",border:"1px solid #E05C5C33",borderRadius:9,color:C.danger,padding:"6px 12px",cursor:"pointer",fontSize:12,fontFamily:FONT}}>Denunciar</button>}
@@ -3786,8 +4379,12 @@ function CursoPage({post,session,onClose,onUpdatePost}){
               ...(post.tipo==="oferta"&&(esMio||esAyudante)?[
                 {id:"evaluaciones",label:"🎓 Evaluaciones",pendiente:esPendienteValidacion},
                 {id:"notas",label:"📊 Notas"},
+                {id:"progreso",label:"📈 Progreso"},
               ]:[]),
               ...(hasCal?[{id:"calendario",label:"📅 Calendario"}]:[]),
+              {id:"flashcards",label:"🃏 Flashcards"},
+              {id:"misnotas",label:"📝 Mis notas"},
+              {id:"qa",label:"❓ Q&A"},
               {id:"foro",label:"🗣 Foro"},
               {id:"chat",label:mensajesNuevos>0?`💬 Chat (${mensajesNuevos})`:"💬 Chat"},
             ].map(tab=>(
@@ -3911,6 +4508,11 @@ function CursoPage({post,session,onClose,onUpdatePost}){
             )}
           </div>}
 
+          {/* ── TAB: Progreso ── */}
+          {tabActivo==="progreso"&&(esMio||esAyudante)&&<div style={{marginBottom:18}}>
+            <ProgresoCurso post={post} session={session}/>
+          </div>}
+
           {/* ── TAB: Calendario ── */}
           {tabActivo==="calendario"&&(()=>{
             const clasesSinc=(()=>{try{return post.clases_sinc?JSON.parse(post.clases_sinc):[];}catch{return[];}})();
@@ -3947,6 +4549,22 @@ function CursoPage({post,session,onClose,onUpdatePost}){
             );
           })()}
 
+          {/* ── TAB: Flashcards ── */}
+          {tabActivo==="flashcards"&&<div style={{marginBottom:18}}>
+            {tieneAcceso
+              ?<Flashcards post={post} session={session} esMio={esMio} esAyudante={esAyudante}/>
+              :<div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"30px",textAlign:"center",color:C.muted,fontSize:13}}>Inscribite para usar las flashcards.</div>
+            }
+          </div>}
+
+          {/* ── TAB: Q&A ── */}
+          {tabActivo==="qa"&&<div style={{marginBottom:18}}>
+            {tieneAcceso
+              ?<QACurso post={post} session={session} esMio={esMio} esAyudante={esAyudante}/>
+              :<div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"30px",textAlign:"center",color:C.muted,fontSize:13}}>Inscribite para acceder al Q&amp;A.</div>
+            }
+          </div>}
+
           {/* ── TAB: Foro ── */}
           {tabActivo==="foro"&&<div style={{marginBottom:18}}>
             {tieneAcceso
@@ -3954,6 +4572,14 @@ function CursoPage({post,session,onClose,onUpdatePost}){
               :<div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"30px",textAlign:"center",color:C.muted,fontSize:13}}>Inscribite para participar en el foro.</div>
             }
           </div>}
+
+          {/* ── TAB: Notas ── */}
+          {tabActivo==="misnotas"&&(()=>{
+            const notaKey=`cl_nota_${post.id}_${miEmail}`;
+            return(
+              <NotasPrivadas storageKey={notaKey} session={session} post={post}/>
+            );
+          })()}
 
           {/* ── TAB: Chat ── */}
           {tabActivo==="chat"&&<div style={{marginBottom:18}}>
