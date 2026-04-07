@@ -1694,6 +1694,145 @@ function AgendaPage({session,onOpenCurso}){
 }
 
 // ─── NOTAS PRIVADAS ──────────────────────────────────────────────────────────
+// ─── PANEL DE PROGRESO DOCENTE ───────────────────────────────────────────────
+function ProgresoCurso({post,session}){
+  const [inscriptos,setInscriptos]=useState([]);
+  const [quizEntregas,setQuizEntregas]=useState([]);// flat list
+  const [evalEntregas,setEvalEntregas]=useState([]);
+  const [contenido,setContenido]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [busqueda,setBusqueda]=useState("");
+  const [ordenar,setOrdenar]=useState("nombre");// "nombre"|"quiz"|"eval"|"fecha"
+
+  useEffect(()=>{
+    (async()=>{
+      try{
+        const [ins,cont,evals]=await Promise.all([
+          sb.getInscripciones(post.id,session.access_token),
+          sb.getContenido(post.id,session.access_token),
+          sb.getEvaluaciones(post.id,session.access_token),
+        ]);
+        setInscriptos(ins||[]);
+        setContenido(cont||[]);
+        // Obtener quizzes (items de contenido tipo quiz) y todas sus entregas
+        const quizItems=(cont||[]).filter(c=>c.tipo==="quiz");
+        const evalIds=(evals||[]).map(e=>e.id);
+        const [qEntregas,evEntregas]=await Promise.all([
+          Promise.all(quizItems.map(q=>sb.getQuizEntregas(q.id,session.access_token).then(r=>r||[]))).then(rs=>rs.flat()),
+          Promise.all(evalIds.map(eid=>sb.getEvaluacionEntregas(eid,session.access_token).then(r=>r||[]))).then(rs=>rs.flat()),
+        ]);
+        setQuizEntregas(qEntregas);
+        setEvalEntregas(evEntregas);
+      }catch(e){console.error(e);}
+      setLoading(false);
+    })();
+  },[post.id,session.access_token]);
+
+  if(loading)return <div style={{padding:"40px",textAlign:"center"}}><Spinner/></div>;
+
+  // Construir mapa por alumno
+  const totalQuizzes=contenido.filter(c=>c.tipo==="quiz").length;
+  const alumnosData=inscriptos.map(ins=>{
+    const email=ins.alumno_email;
+    const nombre=ins.alumno_nombre||email.split("@")[0];
+    const qHechos=quizEntregas.filter(q=>q.alumno_email===email);
+    const qPct=totalQuizzes>0?Math.round((qHechos.length/totalQuizzes)*100):null;
+    const qPromedio=qHechos.length>0?Math.round(qHechos.reduce((s,q)=>s+(q.puntaje||0),0)/qHechos.length):null;
+    const eHechas=evalEntregas.filter(e=>e.alumno_email===email);
+    const eCalif=eHechas.filter(e=>e.calificacion!=null);
+    const ePromedio=eCalif.length>0?Math.round(eCalif.reduce((s,e)=>s+(e.calificacion||0),0)/eCalif.length):null;
+    const ultimaFecha=ins.created_at?new Date(ins.created_at):null;
+    return{email,nombre,qHechos:qHechos.length,qPct,qPromedio,eHechas:eHechas.length,eCalif:eCalif.length,ePromedio,ultimaFecha,inscripcion:ins};
+  });
+
+  const filtrados=alumnosData
+    .filter(a=>!busqueda||a.nombre.toLowerCase().includes(busqueda.toLowerCase())||a.email.toLowerCase().includes(busqueda.toLowerCase()))
+    .sort((a,b)=>{
+      if(ordenar==="nombre")return a.nombre.localeCompare(b.nombre);
+      if(ordenar==="quiz")return(b.qPct||0)-(a.qPct||0);
+      if(ordenar==="eval")return(b.ePromedio||0)-(a.ePromedio||0);
+      if(ordenar==="fecha")return(b.ultimaFecha||0)-(a.ultimaFecha||0);
+      return 0;
+    });
+
+  const totalQuizzesTotal=totalQuizzes;
+  const avgQuizPct=alumnosData.length>0&&totalQuizzesTotal>0?Math.round(alumnosData.reduce((s,a)=>s+(a.qPct||0),0)/alumnosData.length):null;
+
+  return(
+    <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden"}}>
+      {/* Header */}
+      <div style={{padding:"14px 18px",borderBottom:`1px solid ${C.border}`,background:C.surface}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+          <span style={{fontSize:20}}>📊</span>
+          <div style={{flex:1}}>
+            <div style={{fontWeight:700,color:C.text,fontSize:14}}>Panel de progreso</div>
+            <div style={{fontSize:11,color:C.muted}}>{inscriptos.length} alumnos inscriptos</div>
+          </div>
+        </div>
+        {/* Stats resumen */}
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
+          {[
+            {label:"Inscriptos",value:inscriptos.length,icon:"👥"},
+            {label:"Quizzes totales",value:totalQuizzesTotal,icon:"📝"},
+            {label:"Promedio quiz",value:avgQuizPct!=null?`${avgQuizPct}%`:"—",icon:"📈"},
+          ].map(s=>(
+            <div key={s.label} style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:9,padding:"8px 13px",flex:1,minWidth:90}}>
+              <div style={{fontSize:10,color:C.muted,marginBottom:2}}>{s.icon} {s.label}</div>
+              <div style={{fontWeight:700,color:C.text,fontSize:16}}>{s.value}</div>
+            </div>
+          ))}
+        </div>
+        {/* Buscar + ordenar */}
+        <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+          <input value={busqueda} onChange={e=>setBusqueda(e.target.value)} placeholder="Buscar alumno…"
+            style={{flex:1,minWidth:120,background:C.bg,border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 11px",color:C.text,fontSize:12,fontFamily:FONT,outline:"none"}}/>
+          <select value={ordenar} onChange={e=>setOrdenar(e.target.value)}
+            style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 10px",color:C.text,fontSize:12,fontFamily:FONT,outline:"none",cursor:"pointer"}}>
+            <option value="nombre">Ordenar: Nombre</option>
+            <option value="quiz">Ordenar: % Quiz</option>
+            <option value="eval">Ordenar: Nota eval</option>
+            <option value="fecha">Ordenar: Inscripción</option>
+          </select>
+        </div>
+      </div>
+      {/* Lista alumnos */}
+      <div style={{maxHeight:480,overflowY:"auto"}}>
+        {filtrados.length===0?(
+          <div style={{padding:"32px",textAlign:"center",color:C.muted,fontSize:13}}>{inscriptos.length===0?"Nadie inscripto aún.":"No hay resultados."}</div>
+        ):filtrados.map((a,i)=>(
+          <div key={a.email} style={{padding:"12px 18px",borderBottom:i<filtrados.length-1?`1px solid ${C.border}`:"none",display:"flex",gap:12,alignItems:"center"}}>
+            <Avatar letra={a.nombre[0]} size={34}/>
+            <div style={{flex:1,overflow:"hidden"}}>
+              <div style={{fontWeight:600,color:C.text,fontSize:13,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{a.nombre}</div>
+              <div style={{fontSize:11,color:C.muted,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{a.email}</div>
+            </div>
+            {/* Métricas */}
+            <div style={{display:"flex",gap:8,flexShrink:0,alignItems:"center"}}>
+              {totalQuizzesTotal>0&&(
+                <div style={{textAlign:"center",minWidth:54}}>
+                  <div style={{fontSize:10,color:C.muted,marginBottom:2}}>Quiz</div>
+                  <div style={{fontWeight:700,color:a.qPct>=70?C.success:a.qPct>=40?C.accent:C.muted,fontSize:13}}>{a.qPct!=null?`${a.qPct}%`:"—"}</div>
+                  {totalQuizzesTotal>0&&<div style={{width:50,height:3,background:C.border,borderRadius:2,marginTop:2}}><div style={{height:"100%",width:`${a.qPct||0}%`,background:a.qPct>=70?C.success:C.accent,borderRadius:2}}/></div>}
+                </div>
+              )}
+              {a.eHechas>0&&(
+                <div style={{textAlign:"center",minWidth:54}}>
+                  <div style={{fontSize:10,color:C.muted,marginBottom:2}}>Nota</div>
+                  <div style={{fontWeight:700,color:a.ePromedio>=6?C.success:C.danger,fontSize:13}}>{a.ePromedio!=null?a.ePromedio:"Pend."}</div>
+                </div>
+              )}
+              <div style={{textAlign:"center",minWidth:40}}>
+                <div style={{fontSize:10,color:C.muted,marginBottom:2}}>Insc.</div>
+                <div style={{fontSize:11,color:C.muted}}>{a.ultimaFecha?fmtRel(a.ultimaFecha):"—"}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── FLASHCARDS CON IA ───────────────────────────────────────────────────────
 const FC_KEY=(postId)=>`cl_flashcards_${postId}`;
 function FlashcardsDeck({cards,onDelete}){
@@ -4240,6 +4379,7 @@ function CursoPage({post,session,onClose,onUpdatePost}){
               ...(post.tipo==="oferta"&&(esMio||esAyudante)?[
                 {id:"evaluaciones",label:"🎓 Evaluaciones",pendiente:esPendienteValidacion},
                 {id:"notas",label:"📊 Notas"},
+                {id:"progreso",label:"📈 Progreso"},
               ]:[]),
               ...(hasCal?[{id:"calendario",label:"📅 Calendario"}]:[]),
               {id:"flashcards",label:"🃏 Flashcards"},
@@ -4366,6 +4506,11 @@ function CursoPage({post,session,onClose,onUpdatePost}){
                 }
               </div>
             )}
+          </div>}
+
+          {/* ── TAB: Progreso ── */}
+          {tabActivo==="progreso"&&(esMio||esAyudante)&&<div style={{marginBottom:18}}>
+            <ProgresoCurso post={post} session={session}/>
           </div>}
 
           {/* ── TAB: Calendario ── */}
