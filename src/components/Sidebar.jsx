@@ -87,11 +87,12 @@ export default function Sidebar({page,setPage,session,onLogout,onNewPost,unreadC
         <div style={{margin:"10px 8px",height:1,background:C.border}}/>
         {esAdmin&&(
           <button onClick={()=>{if(mobile)onClose();window.__openAdmin&&window.__openAdmin();}}
-            style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#7B3FBE20,#1A6ED820)",color:"#7B3FBE",fontWeight:600,fontSize:13,cursor:"pointer",marginBottom:4,fontFamily:FONT,textAlign:"left",transition:"background .12s"}}
-            onMouseEnter={e=>e.currentTarget.style.background="linear-gradient(135deg,#7B3FBE30,#1A6ED830)"}
-            onMouseLeave={e=>e.currentTarget.style.background="linear-gradient(135deg,#7B3FBE20,#1A6ED820)"}>
-            <span style={{fontSize:16}}>⚙️</span>
-            <span>Panel Admin</span>
+            style={{width:"100%",display:"flex",alignItems:"center",gap:9,padding:"8px 12px",borderRadius:8,border:`1px solid #C80000`,background:"#C8000010",color:"#C80000",fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:4,fontFamily:FONT,textAlign:"left",transition:"all .15s",letterSpacing:.2}}
+            onMouseEnter={e=>{e.currentTarget.style.background="#C8000018";e.currentTarget.style.borderColor="#C80000";}}
+            onMouseLeave={e=>{e.currentTarget.style.background="#C8000010";e.currentTarget.style.borderColor="#C80000";}}>
+            <span style={{width:18,height:18,borderRadius:4,background:"#C80000",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#fff",flexShrink:0,fontWeight:900}}>A</span>
+            <span style={{flex:1}}>Admin</span>
+            <span style={{fontSize:9,background:"#C80000",color:"#fff",borderRadius:3,padding:"1px 5px",fontWeight:700}}>LUDERIS</span>
           </button>
         )}
         <button onClick={()=>{onNewPost();if(mobile)onClose();}}

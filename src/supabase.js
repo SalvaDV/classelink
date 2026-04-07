@@ -384,7 +384,7 @@ export const getUsuarioById = (id, token) =>
     .then(r => r?.[0] || null).catch(() => null);
 
 export const getUsuarioByEmail = (email, token) =>
-  db(`usuarios?email=eq.${encodeURIComponent(email)}&select=id,email,nombre,display_name,bio,ubicacion,avatar_url`, "GET", null, token)
+  db(`usuarios?email=eq.${encodeURIComponent(email)}&select=id,email,nombre,display_name,bio,ubicacion,avatar_url,rol`, "GET", null, token)
     .then(r => r?.[0] || null).catch(() => null);
 
 // ── IA helper — llama a la Supabase Edge Function "ai-proxy" ─────────────────
