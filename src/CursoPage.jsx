@@ -253,6 +253,38 @@ function AyudanteBuscador({post,session,ayudantesActuales,onUpdate}){
     </div>
   );
 }
+// ─── JITSI MODAL ─────────────────────────────────────────────────────────────
+function JitsiModal({roomName,displayName,onClose}){
+  const room=roomName.replace(/[^a-zA-Z0-9]/g,"").slice(0,32)||"luderisclase";
+  const src=`https://meet.jit.si/${room}#userInfo.displayName="${encodeURIComponent(displayName)}"`;
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:700,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:12}} onClick={onClose}>
+      <div style={{width:"min(900px,98vw)",height:"min(620px,90vh)",background:"#1a1a2e",borderRadius:16,overflow:"hidden",display:"flex",flexDirection:"column",boxShadow:"0 20px 60px rgba(0,0,0,.5)"}} onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 16px",background:"#12122a",flexShrink:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:18}}>📹</span>
+            <div>
+              <div style={{color:"#fff",fontWeight:700,fontSize:14}}>Videollamada grupal</div>
+              <div style={{color:"rgba(255,255,255,.5)",fontSize:11}}>Sala: {room}</div>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            <span style={{fontSize:11,color:"rgba(255,255,255,.4)"}}>Powered by Jitsi</span>
+            <button onClick={onClose} style={{background:"none",border:"1px solid rgba(255,255,255,.2)",borderRadius:8,color:"rgba(255,255,255,.7)",fontSize:13,cursor:"pointer",padding:"5px 12px",fontFamily:FONT}}>✕ Salir</button>
+          </div>
+        </div>
+        <iframe
+          src={src}
+          title="Videollamada"
+          allow="camera; microphone; display-capture; autoplay; fullscreen"
+          allowFullScreen
+          style={{flex:1,border:"none",width:"100%"}}
+        />
+      </div>
+    </div>
+  );
+}
+
 // ─── CHAT CURSO — chat grupal estilo WhatsApp ────────────────────────────────
 const SUPABASE_URL_CHAT=process.env.REACT_APP_SUPABASE_URL||"https://hptdyehzqfpgtrpuydny.supabase.co";
 const ANON_KEY_CHAT=process.env.REACT_APP_SUPABASE_KEY||"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwdGR5ZWh6cWZwZ3RycHV5ZG55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MzYyODIsImV4cCI6MjA4ODQxMjI4Mn0.apesTxMiG-WJbhtfpxorLPagiDAnFH826wR0CuZ4y_g";
@@ -278,6 +310,7 @@ function ChatCurso({post,session,ayudantes=[],ayudanteEmails=[],onNewMessages}){
   const [loading,setLoading]=useState(true);
   const [escribiendo,setEscribiendo]=useState([]);// emails escribiendo
   const [imagenPrevia,setImagenPrevia]=useState(null);
+  const [showJitsi,setShowJitsi]=useState(false);
   const miEmail=session.user.email;
   const bottomRef=useRef(null);
   const didScrollRef=useRef(false);
@@ -391,19 +424,32 @@ function ChatCurso({post,session,ayudantes=[],ayudanteEmails=[],onNewMessages}){
     return{...m,showDate:!mismaFecha};
   });
 
+  const jitsiRoom=`luderis${post.id.replace(/-/g,"").slice(0,20)}`;
+  const miDisplayName=sb.getDisplayName(miEmail)||miEmail.split("@")[0];
+
   return(
+    <>
+    {showJitsi&&<JitsiModal roomName={jitsiRoom} displayName={miDisplayName} onClose={()=>setShowJitsi(false)}/>}
     <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden",display:"flex",flexDirection:"column"}}>
       {/* Header */}
-      <div style={{padding:"12px 16px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",gap:10,background:C.surface}}>
+      <div style={{padding:"10px 14px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",gap:10,background:C.surface}}>
         <span style={{fontSize:18}}>💬</span>
         <div style={{flex:1}}>
           <div style={{fontWeight:700,color:C.text,fontSize:14}}>Chat grupal</div>
           <div style={{fontSize:11,color:C.muted}}>{msgs.length} mensaje{msgs.length!==1?"s":""}</div>
         </div>
+        {/* Botón videollamada */}
+        <button onClick={()=>setShowJitsi(true)}
+          title="Iniciar videollamada grupal"
+          style={{background:"linear-gradient(135deg,#1A6ED8,#2EC4A0)",border:"none",borderRadius:9,padding:"6px 12px",cursor:"pointer",color:"#fff",fontSize:12,fontWeight:700,fontFamily:FONT,display:"flex",alignItems:"center",gap:5,flexShrink:0,transition:"opacity .15s"}}
+          onMouseEnter={e=>e.currentTarget.style.opacity=".85"}
+          onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
+          📹 <span>Videollamada</span>
+        </button>
         {/* Leyenda de roles */}
-        <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          <span style={{fontSize:10,background:"#C85CE015",color:"#C85CE0",borderRadius:20,padding:"2px 8px",border:"1px solid #C85CE030",fontWeight:600}}>Docente</span>
-          <span style={{fontSize:10,background:"#5CA8E015",color:"#5CA8E0",borderRadius:20,padding:"2px 8px",border:"1px solid #5CA8E030",fontWeight:600}}>Ayudante</span>
+        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+          <span style={{fontSize:10,background:"#C85CE015",color:"#C85CE0",borderRadius:20,padding:"2px 7px",border:"1px solid #C85CE030",fontWeight:600}}>Docente</span>
+          <span style={{fontSize:10,background:"#5CA8E015",color:"#5CA8E0",borderRadius:20,padding:"2px 7px",border:"1px solid #5CA8E030",fontWeight:600}}>Ayudante</span>
         </div>
       </div>
 
@@ -516,6 +562,7 @@ function ChatCurso({post,session,ayudantes=[],ayudanteEmails=[],onNewMessages}){
           style={{background:C.accent,border:"none",borderRadius:"50%",width:36,height:36,cursor:(input.trim()||imagenPrevia)?"pointer":"default",fontSize:16,flexShrink:0,opacity:(input.trim()||imagenPrevia)?1:0.4,transition:"all .15s",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center"}}>↑</button>
       </div>
     </div>
+    </>
   );
 }
 
