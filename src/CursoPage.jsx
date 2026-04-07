@@ -4416,6 +4416,18 @@ function CursoPage({post,session,onClose,onUpdatePost}){
             <AyudanteBuscador post={post} session={session} ayudantesActuales={post.ayudantes||[]} onUpdate={ayuds=>{post.ayudantes=ayuds;setInscripciones([...inscripciones]);}}/>
           </div>)}
           {!esMio&&(<div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"12px 16px",marginBottom:18}}><InscritosCount pubId={post.id} session={session}/></div>)}
+          {esMio&&<div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
+            {[
+              {icon:"👥",label:"Inscriptos",value:inscripciones.length},
+              {icon:"⭐",label:"Rating",value:post.calificacion_promedio>0?parseFloat(post.calificacion_promedio).toFixed(1)+"★":"—"},
+              {icon:"📝",label:"Contenido",value:contenido.length},
+            ].map(s=>(
+              <div key={s.label} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"8px 13px",flex:1,minWidth:80}}>
+                <div style={{fontSize:10,color:C.muted}}>{s.icon} {s.label}</div>
+                <div style={{fontWeight:700,color:C.text,fontSize:16,marginTop:1}}>{s.value}</div>
+              </div>
+            ))}
+          </div>}
           {/* ── TABS ── */}
           <div style={{display:"flex",gap:2,marginBottom:14,background:C.card,borderRadius:12,padding:4,border:`1px solid ${C.border}`}}>
             {[

@@ -53,6 +53,34 @@ function MiniBarChart({data,color,height=50,width=0,showValues=true}){
   );
 }
 
+function MiActividadCard({session}){
+  const [insc,setInsc]=useState(null);
+  useEffect(()=>{
+    sb.getMisInscripciones(session.user.email,session.access_token).then(r=>setInsc(r||[])).catch(()=>setInsc([]));
+  },[session.user.email,session.access_token]);
+  if(insc===null)return null;
+  const activos=insc.filter(i=>!i.clase_finalizada).length;
+  const completados=insc.filter(i=>i.clase_finalizada).length;
+  return(
+    <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:16,padding:"16px 20px",marginBottom:16}}>
+      <div style={{fontWeight:700,color:C.text,fontSize:15,marginBottom:14}}>📊 Mi actividad</div>
+      <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+        {[
+          {icon:"🎓",label:"Cursos inscripto",value:insc.length,color:C.accent},
+          {icon:"📚",label:"En curso",value:activos,color:C.info},
+          {icon:"✅",label:"Completados",value:completados,color:C.success},
+        ].map(s=>(
+          <div key={s.label} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 16px",flex:1,minWidth:90,textAlign:"center"}}>
+            <div style={{fontSize:20}}>{s.icon}</div>
+            <div style={{fontSize:22,fontWeight:800,color:s.color,marginTop:4}}>{s.value}</div>
+            <div style={{fontSize:11,color:C.muted,marginTop:2}}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function DocenteStats({pubs,reseñas,inscritosMap}){
   const [seccion,setSeccion]=useState("resumen");
   const ofertas=pubs.filter(p=>p.tipo==="oferta"&&p.activo!==false&&!p.finalizado);
@@ -1436,6 +1464,7 @@ function MiCuentaPage({session,onOpenDetail,onOpenCurso,onEdit,onNew,onOpenChat,
       {/* ── TAB: ESTADÍSTICAS ── */}
       {tabCuenta==="estadisticas"&&(
         <div>
+          <MiActividadCard session={session}/>
           {loading?<Spinner/>:<DocenteStats pubs={pubs} reseñas={reseñas} inscritosMap={inscritosMap}/>}
         </div>
       )}
