@@ -1694,6 +1694,157 @@ function AgendaPage({session,onOpenCurso}){
 }
 
 // ─── NOTAS PRIVADAS ──────────────────────────────────────────────────────────
+// ─── FLASHCARDS CON IA ───────────────────────────────────────────────────────
+const FC_KEY=(postId)=>`cl_flashcards_${postId}`;
+function FlashcardsDeck({cards,onDelete}){
+  const [idx,setIdx]=useState(0);const [flip,setFlip]=useState(false);const [done,setDone]=useState([]);
+  if(!cards||cards.length===0)return null;
+  const remaining=cards.filter((_,i)=>!done.includes(i));
+  if(remaining.length===0)return(
+    <div style={{textAlign:"center",padding:"32px 0"}}>
+      <div style={{fontSize:36,marginBottom:10}}>🎉</div>
+      <div style={{fontWeight:700,color:C.text,fontSize:16,marginBottom:6}}>¡Completaste todas las flashcards!</div>
+      <button onClick={()=>setDone([])} style={{background:C.accent,border:"none",borderRadius:10,color:"#fff",padding:"9px 20px",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:FONT}}>Volver a empezar</button>
+    </div>
+  );
+  const realIdx=cards.indexOf(remaining[idx%remaining.length]);
+  const card=cards[realIdx];
+  return(
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:14,padding:"10px 0"}}>
+      <div style={{fontSize:12,color:C.muted}}>{remaining.length} restantes · {done.length} completadas</div>
+      {/* Card */}
+      <div onClick={()=>setFlip(f=>!f)} style={{width:"100%",maxWidth:460,minHeight:160,background:flip?C.accentDim:C.surface,border:`2px solid ${flip?C.accent:C.border}`,borderRadius:18,padding:"28px 24px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 20px rgba(0,0,0,.07)",transition:"all .2s",position:"relative"}}>
+        <div style={{textAlign:"center"}}>
+          <div style={{fontSize:10,color:C.muted,fontWeight:700,letterSpacing:.5,marginBottom:8,textTransform:"uppercase"}}>{flip?"RESPUESTA":"PREGUNTA"} · click para voltear</div>
+          <div style={{fontSize:15,color:C.text,fontWeight:flip?500:700,lineHeight:1.6}}>{flip?card.respuesta:card.pregunta}</div>
+        </div>
+        {onDelete&&<button onClick={e=>{e.stopPropagation();onDelete(realIdx);}} style={{position:"absolute",top:8,right:10,background:"none",border:"none",color:C.muted,fontSize:16,cursor:"pointer",opacity:.5}} title="Eliminar">×</button>}
+      </div>
+      {/* Controles */}
+      <div style={{display:"flex",gap:10}}>
+        <button onClick={()=>{setDone(d=>[...d,realIdx]);setFlip(false);if(idx>=remaining.length-1)setIdx(0);}} style={{background:"#2EC4A020",border:"1px solid #2EC4A050",borderRadius:10,color:"#0F6E56",padding:"8px 18px",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:FONT}}>✓ La sabía</button>
+        <button onClick={()=>{setFlip(false);setIdx(i=>(i+1)%remaining.length);}} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,color:C.muted,padding:"8px 18px",cursor:"pointer",fontSize:13,fontFamily:FONT}}>→ Siguiente</button>
+      </div>
+      {/* Miniprogress */}
+      <div style={{width:"100%",maxWidth:460,height:4,background:C.border,borderRadius:2}}>
+        <div style={{height:"100%",width:`${(done.length/cards.length)*100}%`,background:C.accent,borderRadius:2,transition:"width .4s"}}/>
+      </div>
+    </div>
+  );
+}
+
+function Flashcards({post,session,esMio,esAyudante}){
+  const [cards,setCards]=useState(()=>{try{return JSON.parse(localStorage.getItem(FC_KEY(post.id))||"[]");}catch{return[];}});
+  const [generando,setGenerando]=useState(false);
+  const [tema,setTema]=useState("");
+  const [modo,setModo]=useState("repaso");// "repaso"|"agregar"
+  const [manualP,setManualP]=useState("");const [manualR,setManualR]=useState("");
+
+  const save=(c)=>{setCards(c);try{localStorage.setItem(FC_KEY(post.id),JSON.stringify(c));}catch{}};
+
+  const generarConIA=async()=>{
+    const contexto=tema.trim()||post.titulo;
+    setGenerando(true);
+    try{
+      const prompt=`Generá exactamente 8 flashcards de estudio sobre "${contexto}" para el curso "${post.titulo}". Devolvé SOLO un array JSON válido con objetos {pregunta,respuesta}. Sin texto extra, solo el JSON. Máximo 120 caracteres por campo. Usá español rioplatense.`;
+      const r=await sb.callIA("Sos un experto generador de flashcards educativas.",prompt,600,session.access_token);
+      const match=r.match(/\[[\s\S]*\]/);
+      if(!match)throw new Error("IA no devolvió JSON");
+      const nuevas=JSON.parse(match[0]);
+      if(!Array.isArray(nuevas)||!nuevas[0]?.pregunta)throw new Error("Formato incorrecto");
+      save([...cards,...nuevas.slice(0,8)]);
+      setTema("");setModo("repaso");
+      toast(`✨ ${nuevas.slice(0,8).length} flashcards generadas`,"success");
+    }catch(e){toast("Error al generar: "+e.message,"error");}
+    setGenerando(false);
+  };
+
+  const agregarManual=()=>{
+    if(!manualP.trim()||!manualR.trim())return;
+    save([...cards,{pregunta:manualP.trim(),respuesta:manualR.trim()}]);
+    setManualP("");setManualR("");
+  };
+
+  const eliminar=(i)=>{const c=[...cards];c.splice(i,1);save(c);};
+
+  const iS={background:C.bg,border:`1px solid ${C.border}`,borderRadius:9,padding:"9px 13px",color:C.text,fontSize:13,fontFamily:FONT,width:"100%",boxSizing:"border-box",outline:"none",marginBottom:8};
+
+  return(
+    <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden"}}>
+      {/* Header */}
+      <div style={{padding:"12px 16px",borderBottom:`1px solid ${C.border}`,background:C.surface,display:"flex",alignItems:"center",gap:10}}>
+        <span style={{fontSize:18}}>🃏</span>
+        <div style={{flex:1}}>
+          <div style={{fontWeight:700,color:C.text,fontSize:14}}>Flashcards</div>
+          <div style={{fontSize:11,color:C.muted}}>{cards.length} tarjetas · repaso con spaced repetition</div>
+        </div>
+        <div style={{display:"flex",gap:6}}>
+          <button onClick={()=>setModo(m=>m==="repaso"?"agregar":"repaso")}
+            style={{background:modo==="agregar"?C.accentDim:"none",border:`1px solid ${modo==="agregar"?C.accent:C.border}`,borderRadius:8,color:modo==="agregar"?C.accent:C.muted,padding:"5px 10px",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:FONT}}>
+            {modo==="agregar"?"← Repasar":"+ Agregar"}
+          </button>
+          {cards.length>0&&<button onClick={()=>{if(window.confirm("¿Borrar todas las flashcards?"))save([]);}}
+            style={{background:"none",border:`1px solid ${C.border}`,borderRadius:8,color:C.muted,padding:"5px 10px",cursor:"pointer",fontSize:11,fontFamily:FONT}}>
+            🗑 Borrar todo
+          </button>}
+        </div>
+      </div>
+
+      <div style={{padding:"16px 18px"}}>
+        {modo==="repaso"?(
+          cards.length===0?(
+            <div style={{textAlign:"center",padding:"32px 0",color:C.muted}}>
+              <div style={{fontSize:32,marginBottom:10}}>🃏</div>
+              <div style={{fontSize:14,marginBottom:16}}>No tenés flashcards aún.</div>
+              <button onClick={()=>setModo("agregar")} style={{background:C.accent,border:"none",borderRadius:10,color:"#fff",padding:"9px 20px",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:FONT}}>Crear flashcards</button>
+            </div>
+          ):<FlashcardsDeck cards={cards} onDelete={eliminar}/>
+        ):(
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            {/* Generador IA */}
+            <div style={{background:"#7B3FBE10",border:"1px solid #7B3FBE30",borderRadius:12,padding:"14px 16px"}}>
+              <div style={{fontWeight:700,color:"#7B3FBE",fontSize:13,marginBottom:8}}>✨ Generar con IA</div>
+              <input value={tema} onChange={e=>setTema(e.target.value)} placeholder={`Tema a estudiar (ej: "derivadas", "fotosíntesis")`} style={{...iS,marginBottom:8}}/>
+              <button onClick={generarConIA} disabled={generando}
+                style={{background:"linear-gradient(135deg,#7B3FBE,#1A6ED8)",border:"none",borderRadius:9,color:"#fff",padding:"9px 18px",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:FONT,opacity:generando?.6:1,width:"100%"}}>
+                {generando?"Generando…":"✨ Generar 8 flashcards"}
+              </button>
+            </div>
+            {/* Manual */}
+            <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px"}}>
+              <div style={{fontWeight:700,color:C.text,fontSize:13,marginBottom:8}}>✍ Agregar manual</div>
+              <input value={manualP} onChange={e=>setManualP(e.target.value)} placeholder="Pregunta" style={iS}/>
+              <input value={manualR} onChange={e=>setManualR(e.target.value)} placeholder="Respuesta" style={iS}
+                onKeyDown={e=>e.key==="Enter"&&agregarManual()}/>
+              <button onClick={agregarManual} disabled={!manualP.trim()||!manualR.trim()}
+                style={{background:C.accent,border:"none",borderRadius:9,color:"#fff",padding:"9px 18px",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:FONT,opacity:(!manualP.trim()||!manualR.trim())?.4:1}}>
+                Agregar tarjeta
+              </button>
+            </div>
+            {/* Lista existentes */}
+            {cards.length>0&&(
+              <div>
+                <div style={{fontSize:12,color:C.muted,fontWeight:700,marginBottom:8}}>TARJETAS EXISTENTES ({cards.length})</div>
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  {cards.map((c,i)=>(
+                    <div key={i} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,padding:"8px 12px",display:"flex",gap:10,alignItems:"flex-start"}}>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:12,fontWeight:700,color:C.text}}>{c.pregunta}</div>
+                        <div style={{fontSize:11,color:C.muted,marginTop:2}}>{c.respuesta}</div>
+                      </div>
+                      <button onClick={()=>eliminar(i)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:14,flexShrink:0}}>×</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function NotasPrivadas({storageKey,session,post}){
   const [nota,setNota]=useState(()=>{try{return localStorage.getItem(storageKey)||"";}catch{return"";}});
   const [saved,setSaved]=useState(true);
@@ -4091,6 +4242,7 @@ function CursoPage({post,session,onClose,onUpdatePost}){
                 {id:"notas",label:"📊 Notas"},
               ]:[]),
               ...(hasCal?[{id:"calendario",label:"📅 Calendario"}]:[]),
+              {id:"flashcards",label:"🃏 Flashcards"},
               {id:"misnotas",label:"📝 Mis notas"},
               {id:"qa",label:"❓ Q&A"},
               {id:"foro",label:"🗣 Foro"},
@@ -4251,6 +4403,14 @@ function CursoPage({post,session,onClose,onUpdatePost}){
             </div>
             );
           })()}
+
+          {/* ── TAB: Flashcards ── */}
+          {tabActivo==="flashcards"&&<div style={{marginBottom:18}}>
+            {tieneAcceso
+              ?<Flashcards post={post} session={session} esMio={esMio} esAyudante={esAyudante}/>
+              :<div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"30px",textAlign:"center",color:C.muted,fontSize:13}}>Inscribite para usar las flashcards.</div>
+            }
+          </div>}
 
           {/* ── TAB: Q&A ── */}
           {tabActivo==="qa"&&<div style={{marginBottom:18}}>
