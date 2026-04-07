@@ -13,6 +13,63 @@ import {
 import { dispararAlertasIA } from "./PostFormModal";
 import { DenunciaModal, FinalizarClaseModal, ContraofertaModal } from "./App";
 
+// ─── CALENDAR SYNC HELPERS ────────────────────────────────────────────────────
+const BYDAY_MAP={Lunes:"MO",Martes:"TU","Miércoles":"WE",Jueves:"TH",Viernes:"FR",Sábado:"SA",Domingo:"SU"};
+function nextWeekday(dayName,from){
+  const target=Object.keys(BYDAY_MAP).indexOf(dayName);// 0=Lun…6=Dom
+  const date=new Date(from);
+  const cur=(date.getDay()+6)%7;// lunes=0
+  const diff=(target-cur+7)%7||7;
+  date.setDate(date.getDate()+diff);
+  return date;
+}
+function toGCalDate(d,timeStr){
+  // Returns YYYYMMDDTHHMMSS (local)
+  const [h,m]=timeStr.split(":").map(Number);
+  const out=new Date(d);out.setHours(h,m,0,0);
+  return out.toISOString().replace(/[-:]/g,"").slice(0,15);
+}
+function buildGCalUrl(titulo,descripcion,dia,horaI,horaF,fechaInicio,fechaFin){
+  const from=fechaInicio?new Date(fechaInicio):new Date();
+  const start=nextWeekday(dia,from);
+  const startStr=toGCalDate(start,horaI);
+  const endStr=toGCalDate(start,horaF);
+  const byDay=BYDAY_MAP[dia]||"MO";
+  let recur=`RRULE:FREQ=WEEKLY;BYDAY=${byDay}`;
+  if(fechaFin){const until=new Date(fechaFin).toISOString().replace(/[-:]/g,"").slice(0,8)+"T235959Z";recur+=`;UNTIL=${until}`;}
+  const params=new URLSearchParams({
+    action:"TEMPLATE",
+    text:titulo,
+    details:descripcion||"",
+    dates:`${startStr}/${endStr}`,
+    recur,
+    sf:"true",
+    output:"xml",
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+function generarICS(titulo,descripcion,clases,fechaInicio,fechaFin){
+  const from=fechaInicio?new Date(fechaInicio):new Date();
+  let eventos="";
+  clases.forEach((c,idx)=>{
+    const start=nextWeekday(c.dia,from);
+    const [h1,m1]=c.hora_inicio.split(":").map(Number);const [h2,m2]=c.hora_fin.split(":").map(Number);
+    const dtStart=new Date(start);dtStart.setHours(h1,m1,0,0);
+    const dtEnd=new Date(start);dtEnd.setHours(h2,m2,0,0);
+    const fmt=d=>d.toISOString().replace(/[-:]/g,"").slice(0,15);
+    const byDay=BYDAY_MAP[c.dia]||"MO";
+    let rrule=`FREQ=WEEKLY;BYDAY=${byDay}`;
+    if(fechaFin){const until=new Date(fechaFin).toISOString().replace(/[-:]/g,"").slice(0,8)+"T235959Z";rrule+=`;UNTIL=${until}`;}
+    eventos+=`BEGIN:VEVENT\r\nUID:luderis-${idx}-${Date.now()}\r\nDTSTART:${fmt(dtStart)}\r\nDTEND:${fmt(dtEnd)}\r\nRRULE:${rrule}\r\nSUMMARY:${titulo}\r\nDESCRIPTION:${descripcion||""}\r\nEND:VEVENT\r\n`;
+  });
+  return`BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Luderis//ES\r\nCALSCALE:GREGORIAN\r\n${eventos}END:VCALENDAR`;
+}
+function descargarICS(content,nombre){
+  const blob=new Blob([content],{type:"text/calendar;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=nombre+".ics";a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),60000);
+}
+
 function InscritosCount({pubId,session}){
   const [count,setCount]=useState(null);
   useEffect(()=>{sb.getInscripciones(pubId,session.access_token).then(ins=>setCount(ins.length)).catch(()=>setCount(0));},[pubId,session]);
@@ -3855,13 +3912,40 @@ function CursoPage({post,session,onClose,onUpdatePost}){
           </div>}
 
           {/* ── TAB: Calendario ── */}
-          {tabActivo==="calendario"&&<div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"20px",marginBottom:18}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-              <div style={{fontWeight:700,color:C.text,fontSize:15}}>Calendario de clases</div>
-              {esMio&&<button onClick={()=>setShowEditCal(true)} style={{background:C.accentDim,border:`1px solid ${C.accent}44`,borderRadius:8,color:C.accent,padding:"5px 12px",cursor:"pointer",fontSize:12,fontFamily:FONT,fontWeight:600}}>Editar horarios</button>}
+          {tabActivo==="calendario"&&(()=>{
+            const clasesSinc=(()=>{try{return post.clases_sinc?JSON.parse(post.clases_sinc):[];}catch{return[];}})();
+            const descripcion=`Curso en Luderis: ${post.titulo}`;
+            return(
+            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"20px",marginBottom:18}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
+                <div style={{fontWeight:700,color:C.text,fontSize:15}}>Calendario de clases</div>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                  {hasCal&&clasesSinc.length>0&&(
+                    <>
+                      {/* Google Calendar: un botón por cada día */}
+                      {clasesSinc.map((c,i)=>(
+                        <a key={i} href={buildGCalUrl(post.titulo,descripcion,c.dia,c.hora_inicio,c.hora_fin,post.fecha_inicio,post.fecha_fin)}
+                          target="_blank" rel="noopener noreferrer"
+                          style={{background:"#EA433515",border:"1px solid #EA433544",borderRadius:8,color:"#EA4335",padding:"5px 11px",cursor:"pointer",fontSize:11,fontFamily:FONT,fontWeight:600,textDecoration:"none",display:"inline-flex",alignItems:"center",gap:4,transition:"opacity .15s"}}
+                          onMouseEnter={e=>e.currentTarget.style.opacity=".75"}
+                          onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
+                          📅 Google Cal · {c.dia}
+                        </a>
+                      ))}
+                      {/* Descargar ICS */}
+                      <button onClick={()=>descargarICS(generarICS(post.titulo,descripcion,clasesSinc,post.fecha_inicio,post.fecha_fin),post.titulo.slice(0,30))}
+                        style={{background:C.accentDim,border:`1px solid ${C.accent}44`,borderRadius:8,color:C.accent,padding:"5px 11px",cursor:"pointer",fontSize:11,fontFamily:FONT,fontWeight:600}}>
+                        ⬇ Descargar .ics
+                      </button>
+                    </>
+                  )}
+                  {esMio&&<button onClick={()=>setShowEditCal(true)} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:8,color:C.muted,padding:"5px 11px",cursor:"pointer",fontSize:11,fontFamily:FONT,fontWeight:600}}>✏ Editar</button>}
+                </div>
+              </div>
+              {hasCal?<CalendarioCurso post={post} compact={false}/>:<div style={{textAlign:"center",padding:"40px 0",color:C.muted,fontSize:13}}>{esMio?"No cargaste horarios aún. Hacé click en Editar para empezar.":"Este curso no tiene horarios definidos."}</div>}
             </div>
-            {hasCal?<CalendarioCurso post={post} compact={false}/>:<div style={{textAlign:"center",padding:"40px 0",color:C.muted,fontSize:13}}>{esMio?"No cargaste horarios aún. Hacé click en Editar horarios para empezar.":"Este curso no tiene horarios definidos."}</div>}
-          </div>}
+            );
+          })()}
 
           {/* ── TAB: Foro ── */}
           {tabActivo==="foro"&&<div style={{marginBottom:18}}>
