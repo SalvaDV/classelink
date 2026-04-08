@@ -355,10 +355,10 @@ async function dispararAlertasIA(pub, session){
   }catch{}
 }
 
-function PostFormModal({session,postToEdit,onClose,onSave}){
+function PostFormModal({session,postToEdit,onClose,onSave,modoInicial}){
   const editing=!!postToEdit;
-  const [tipo,setTipo]=useState(postToEdit?.tipo||"busqueda");const [materia,setMateria]=useState(postToEdit?.materia||"");const [titulo,setTitulo]=useState(postToEdit?.titulo||"");const [descripcion,setDescripcion]=useState(postToEdit?.descripcion||"");
-  const [modo,setModo]=useState((postToEdit?.modo==="grupal"?"curso":postToEdit?.modo)||"particular");const [precio,setPrecio]=useState(postToEdit?.precio||"");const [precioTipo,setPrecioTipo]=useState(postToEdit?.precio_tipo||"hora");
+  const [tipo,setTipo]=useState(postToEdit?.tipo||(editing?"oferta":"oferta"));const [materia,setMateria]=useState(postToEdit?.materia||"");const [titulo,setTitulo]=useState(postToEdit?.titulo||"");const [descripcion,setDescripcion]=useState(postToEdit?.descripcion||"");
+  const [modo,setModo]=useState((postToEdit?.modo==="grupal"?"curso":postToEdit?.modo)||(modoInicial==="clases"?"particular":"curso"));const [precio,setPrecio]=useState(postToEdit?.precio||"");const [precioTipo,setPrecioTipo]=useState(postToEdit?.precio_tipo||"hora");
   const [tienePrueba,setTienePrueba]=useState(postToEdit?.tiene_prueba||false);const [precioPrueba,setPrecioPrueba]=useState(postToEdit?.precio_prueba||"");
   const [paquetes,setPaquetes]=useState(()=>{try{return JSON.parse(postToEdit?.paquetes||"[]");}catch{return [];}});
   const [sinc,setSinc]=useState(postToEdit?.sinc||"sinc");const [fechaInicio,setFechaInicio]=useState(postToEdit?.fecha_inicio||"");const [fechaFin,setFechaFin]=useState(postToEdit?.fecha_fin||"");
@@ -477,7 +477,7 @@ function PostFormModal({session,postToEdit,onClose,onSave}){
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
           <div>
             <h3 style={{color:C.text,margin:0,fontSize:16,fontWeight:700}}>
-              {editing?"Editar publicación":paso===1?"¿Qué querés publicar?":paso===2?"Contanos más":paso===3?"Detalles de la clase":"Precio y condiciones"}
+              {editing?"Editar publicación":paso===1?"Nueva publicación":paso===2?"Contanos más":paso===3?`Detalles ${modo==="curso"?"del curso":"de la clase"}`:"Precio y condiciones"}
             </h3>
             <div style={{fontSize:11,color:C.muted,marginTop:2}}>Paso {paso} de {totalPasos}</div>
           </div>
@@ -504,30 +504,50 @@ function PostFormModal({session,postToEdit,onClose,onSave}){
 
         {/* ── PASO 1: Tipo + Formato ── */}
         {paso===1&&(
-          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+          <div style={{display:"flex",flexDirection:"column",gap:16}}>
+            {/* Rol: ofrezco / busco */}
             <div>
-              <Label>¿Buscás o ofrecés?</Label>
+              <Label>¿Sos docente o alumno?</Label>
               <div style={{display:"flex",gap:8}}>
-                {[{v:"busqueda",icon:"🔍",label:"Busco clases",sub:"Encontrá un docente"},{v:"oferta",icon:"🎓",label:"Ofrezco clases",sub:"Publicá tus clases"}].map(({v,icon,label,sub})=>(
+                {[{v:"oferta",icon:"🎓",label:"Soy docente",sub:"Quiero publicar"},{v:"busqueda",icon:"🔍",label:"Soy alumno",sub:"Busco docente o curso"}].map(({v,icon,label,sub})=>(
                   <button key={v} onClick={()=>setTipo(v)}
                     style={{flex:1,padding:"14px 10px",borderRadius:14,border:`2px solid ${tipo===v?C.accent:C.border}`,background:tipo===v?C.accentDim:C.bg,cursor:"pointer",fontFamily:FONT,textAlign:"center",transition:"all .15s"}}>
-                    <div style={{fontSize:26,marginBottom:6}}>{icon}</div>
+                    <div style={{fontSize:28,marginBottom:6}}>{icon}</div>
                     <div style={{fontSize:13,fontWeight:700,color:tipo===v?C.accent:C.text}}>{label}</div>
                     <div style={{fontSize:11,color:C.muted,marginTop:2}}>{sub}</div>
                   </button>
                 ))}
               </div>
             </div>
+            {/* Si es docente: elige curso o clase particular */}
             {tipo==="oferta"&&(
               <div>
-                <Label>¿Qué formato?</Label>
-                <div style={{display:"flex",gap:8}}>
-                  {[{v:"particular",icon:"👤",label:"Clase particular",sub:"1 a 1, a tu ritmo"},{v:"curso",icon:"📚",label:"Curso",sub:"Varios alumnos, programa fijo"}].map(({v,icon,label,sub})=>(
+                <Label>¿Qué querés publicar?</Label>
+                <div style={{display:"flex",gap:10}}>
+                  {[
+                    {v:"curso",icon:"📚",label:"Curso",sub:"Contenido estructurado, múltiples alumnos, precio fijo",color:"#7B3FBE"},
+                    {v:"particular",icon:"🎯",label:"Clase particular",sub:"1 a 1 o grupo pequeño, horario flexible",color:C.blue||"#1A6ED8"},
+                  ].map(({v,icon,label,sub,color})=>(
                     <button key={v} onClick={()=>setModo(v)}
-                      style={{flex:1,padding:"14px 10px",borderRadius:14,border:`2px solid ${modo===v?C.accent:C.border}`,background:modo===v?C.accentDim:C.bg,cursor:"pointer",fontFamily:FONT,textAlign:"center",transition:"all .15s"}}>
-                      <div style={{fontSize:26,marginBottom:6}}>{icon}</div>
-                      <div style={{fontSize:13,fontWeight:700,color:modo===v?C.accent:C.text}}>{label}</div>
-                      <div style={{fontSize:11,color:C.muted,marginTop:2}}>{sub}</div>
+                      style={{flex:1,padding:"16px 12px",borderRadius:16,border:`2px solid ${modo===v?color:C.border}`,background:modo===v?color+"15":C.bg,cursor:"pointer",fontFamily:FONT,textAlign:"left",transition:"all .18s",position:"relative"}}>
+                      {modo===v&&<div style={{position:"absolute",top:10,right:10,width:18,height:18,borderRadius:"50%",background:color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#fff",fontWeight:900}}>✓</div>}
+                      <div style={{fontSize:32,marginBottom:8}}>{icon}</div>
+                      <div style={{fontSize:14,fontWeight:700,color:modo===v?color:C.text,marginBottom:4}}>{label}</div>
+                      <div style={{fontSize:11,color:C.muted,lineHeight:1.4}}>{sub}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* Si es alumno: tipo de búsqueda */}
+            {tipo==="busqueda"&&(
+              <div style={{background:C.accentDim,borderRadius:12,padding:"12px 14px",border:`1px solid ${C.accent}33`}}>
+                <div style={{fontSize:12,color:C.accent,fontWeight:600,marginBottom:4}}>¿Qué estás buscando?</div>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  {[{v:"curso",label:"📚 Un curso"},{"v":"particular",label:"🎯 Clases particulares"},{"v":"cualquiera",label:"Cualquiera"}].map(({v,label})=>(
+                    <button key={v} onClick={()=>setModo(v==="cualquiera"?"particular":v)}
+                      style={{padding:"6px 14px",borderRadius:20,border:`1px solid ${(v==="cualquiera"?true:modo===v)?C.accent:C.border}`,background:(v==="cualquiera"?true:modo===v)?C.accent:"transparent",color:(v==="cualquiera"?true:modo===v)?"#fff":C.muted,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:FONT,transition:"all .12s"}}>
+                      {label}
                     </button>
                   ))}
                 </div>
