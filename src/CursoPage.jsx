@@ -4962,17 +4962,22 @@ function InscripcionModal({post,session,onClose,onDone}){
     if(gratis){
       inscribirDirecto(esPrueba?"prueba":"gratis");
     }else{
+      // Para monedas sin Stripe (ARS), auto-seleccionar MP y saltar la elección de método
+      const tieneStripe=post.moneda==="USD"||post.moneda==="EUR";
+      if(!tieneStripe) setMetodo("mp");
       setPaso(2);
     }
   };
 
-  // Si no hay paquetes ni prueba, skip paso 1
+  // Si no hay paquetes ni prueba, skip paso 1 y auto-seleccionar MP para ARS
   React.useEffect(()=>{
     if(paquetesDisp.length===0&&!post.tiene_prueba){
       setOpcion("clase");
+      const tieneStripe=post.moneda==="USD"||post.moneda==="EUR";
+      if(!tieneStripe) setMetodo("mp");
       setPaso(2);
     }
-  },[paquetesDisp,post.tiene_prueba]);
+  },[paquetesDisp,post.tiene_prueba,post.moneda]);
 
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px",fontFamily:FONT}} onClick={onClose}>

@@ -48,10 +48,16 @@ Deno.serve(async (req) => {
         .eq("id", publicacion_id)
         .single();
 
-      if (pubErr || !pub) {
+      if (!pub) {
         return new Response(
-          JSON.stringify({ error: "Publicación no encontrada" }),
+          JSON.stringify({ error: "Publicación no encontrada", id: publicacion_id }),
           { status: 404, headers: { ...CORS, "Content-Type": "application/json" } }
+        );
+      }
+      if (pubErr) {
+        return new Response(
+          JSON.stringify({ error: "Error al validar publicación: " + pubErr.message }),
+          { status: 500, headers: { ...CORS, "Content-Type": "application/json" } }
         );
       }
 
