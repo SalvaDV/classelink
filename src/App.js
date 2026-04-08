@@ -1919,7 +1919,20 @@ export default function App(){
       try{const done=localStorage.getItem("cl_onboarding_done_"+email);if(!done)setShowOnboarding(true);}catch{}
     });
   },[session?.user?.email]);// eslint-disable-line
-  const [chatPost,setChatPost]=useState(null);const [detailPost,setDetailPost]=useState(null);const [cursoPost,setCursoPost]=useState(null);
+  const [chatPost,setChatPost]=useState(null);const [detailPost,setDetailPost]=useState(null);
+  const [cursoPost,setCursoPostRaw]=useState(null);
+  const setCursoPost=(p)=>{try{if(p)sessionStorage.setItem("cl_curso_id",p.id);else sessionStorage.removeItem("cl_curso_id");}catch{}setCursoPostRaw(p);};
+  // Restaurar curso abierto al refrescar
+  useEffect(()=>{
+    if(!session)return;
+    const id=sessionStorage.getItem("cl_curso_id");
+    if(!id)return;
+    sb.getPublicacionesByIds([id],session.access_token).then(pubs=>{
+      const pub=pubs?.[0];
+      if(pub&&pub.tipo==="oferta")setCursoPostRaw(pub);
+      else sessionStorage.removeItem("cl_curso_id");
+    }).catch(()=>{});
+  },[session?.user?.email]);// eslint-disable-line
   // SEO: update title/meta when viewing a specific publication
   useEffect(()=>{
     if(cursoPost||detailPost){
@@ -2189,7 +2202,7 @@ export default function App(){
     if(!ogDesc){ogDesc=document.createElement("meta");ogDesc.setAttribute("property","og:description");document.head.appendChild(ogDesc);}
     ogDesc.content=meta.content;
   },[page]);// eslint-disable-line
-  const logout=()=>{sb.clearSession();setSession(null);};
+  const logout=()=>{sb.clearSession();setSession(null);try{sessionStorage.removeItem("cl_curso_id");}catch{}};
   const openChat=(p)=>{chatPostRef.current=p;setChatPost(p);};
   const closeChat=()=>{chatPostRef.current=null;setChatPost(null);refreshUnread();setChatsKey(k=>k+1);};
   // Tema con estado React para re-render

@@ -389,7 +389,7 @@ function fmtMsgDate(ts){
   return d.toLocaleDateString("es-AR",{day:"numeric",month:"long"});
 }
 
-function ChatCurso({post,session,ayudantes=[],ayudanteEmails=[],onNewMessages}){
+function ChatCurso({post,session,ayudantes=[],ayudanteEmails=[],onNewMessages,esMio,esAyudante}){
   const [msgs,setMsgs]=useState([]);
   const [input,setInput]=useState("");
   const [loading,setLoading]=useState(true);
@@ -536,14 +536,14 @@ function ChatCurso({post,session,ayudantes=[],ayudanteEmails=[],onNewMessages}){
         }} style={{background:"#7B3FBE18",border:"1px solid #7B3FBE33",borderRadius:9,padding:"6px 11px",cursor:"pointer",color:"#7B3FBE",fontSize:11,fontWeight:700,fontFamily:FONT,flexShrink:0}}>
           {loadingResumen?"…":"✨ Resumir"}
         </button>}
-        {/* Botón videollamada */}
-        <button onClick={()=>setShowJitsi(true)}
+        {/* Botón videollamada — solo docente/ayudante */}
+        {(esMio||esAyudante)&&<button onClick={()=>setShowJitsi(true)}
           title="Iniciar videollamada grupal"
           style={{background:"linear-gradient(135deg,#1A6ED8,#2EC4A0)",border:"none",borderRadius:9,padding:"6px 12px",cursor:"pointer",color:"#fff",fontSize:12,fontWeight:700,fontFamily:FONT,display:"flex",alignItems:"center",gap:5,flexShrink:0,transition:"opacity .15s"}}
           onMouseEnter={e=>e.currentTarget.style.opacity=".85"}
           onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
           📹 <span>Videollamada</span>
-        </button>
+        </button>}
         {/* Leyenda de roles */}
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
           <span style={{fontSize:10,background:"#C85CE015",color:"#C85CE0",borderRadius:20,padding:"2px 7px",border:"1px solid #C85CE030",fontWeight:600}}>Docente</span>
@@ -4667,7 +4667,7 @@ function CursoPage({post,session,onClose,onUpdatePost}){
               <>
                 <ForoCurso post={post} session={session} esMio={esMio} esAyudante={esAyudante}/>
                 <div style={{marginTop:14}}>
-                  <ChatCurso post={post} session={session} ayudantes={post.ayudantes||[]} ayudanteEmails={ayudanteEmails} onNewMessages={(n)=>{if(tabActivo!=="comunidad")setMensajesNuevos(prev=>prev+n);}}/>
+                  <ChatCurso post={post} session={session} ayudantes={post.ayudantes||[]} ayudanteEmails={ayudanteEmails} esMio={esMio} esAyudante={esAyudante} onNewMessages={(n)=>{if(tabActivo!=="comunidad")setMensajesNuevos(prev=>prev+n);}}/>
                 </div>
               </>
             ):(
