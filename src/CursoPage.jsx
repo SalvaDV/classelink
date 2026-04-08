@@ -4239,7 +4239,7 @@ function CursoPage({post,session,onClose,onUpdatePost}){
   const [mensajesNuevos,setMensajesNuevos]=useState(0);
   const [showDiagnostico,setShowDiagnostico]=useState(false);
   const [showExamenFinal,setShowExamenFinal]=useState(()=>false);
-  const [tabActivo,setTabActivo]=useState(()=>{if(post._openValidacion)return"aprender";try{return sessionStorage.getItem("curso_tab_"+post.id)||"contenido";}catch{return "contenido";}});
+  const [tabActivo,setTabActivo]=useState(()=>{if(post._openValidacion)return"aprender";try{const t=sessionStorage.getItem("curso_tab_"+post.id);return["contenido","aprender","agenda","comunidad"].includes(t)?t:"contenido";}catch{return "contenido";}});
   const setTab=(t)=>{try{sessionStorage.setItem("curso_tab_"+post.id,t);}catch{}if(t==="chat"||t==="comunidad"){setMensajesNuevos(0);try{sessionStorage.setItem("chat_seen_"+post.id,Date.now());}catch{}}setTabActivo(t);};const [nuevoTipo,setNuevoTipo]=useState("video");const [nuevoTitulo,setNuevoTitulo]=useState("");const [nuevoUrl,setNuevoUrl]=useState("");const [nuevoTexto,setNuevoTexto]=useState("");const [savingC,setSavingC]=useState(false);
   const [calExpanded,setCalExpanded]=useState(false);const [showEditCal,setShowEditCal]=useState(false);const [showFinalizar,setShowFinalizar]=useState(false);const [showDenuncia,setShowDenuncia]=useState(false);const [showCerrarInsc,setShowCerrarInsc]=useState(false);const [localFinalizado,setLocalFinalizado]=useState(!!post.finalizado);const [localCerrado,setLocalCerrado]=useState(!!post.inscripciones_cerradas);
   const [claseActiva,setClaseActiva]=useState(false);const [iniciandoClase,setIniciandoClase]=useState(false);
@@ -4500,7 +4500,7 @@ function CursoPage({post,session,onClose,onUpdatePost}){
           </div>}
           {/* ── TABS ── */}
           <style>{`.curso-tabs::-webkit-scrollbar{display:none}`}</style>
-          <div className="curso-tabs" style={{display:"flex",gap:2,marginBottom:14,background:C.card,borderRadius:12,padding:4,border:`1px solid ${C.border}`,overflowX:"auto",scrollbarWidth:"none",WebkitOverflowScrolling:"touch",flexWrap:"nowrap"}}>
+          <div className="curso-tabs" style={{display:"flex",gap:2,marginBottom:14,background:C.card,borderRadius:12,padding:4,border:`1px solid ${C.border}`}}>
             {[
               {id:"contenido",label:"📁 Contenido"},
               {id:"aprender",label:"🎓 Aprender",pendiente:esPendienteValidacion},
@@ -4508,8 +4508,9 @@ function CursoPage({post,session,onClose,onUpdatePost}){
               {id:"comunidad",label:mensajesNuevos>0?`💬 Comunidad (${mensajesNuevos})`:"💬 Comunidad"},
             ].map(tab=>(
               <button key={tab.id} onClick={()=>setTab(tab.id)}
-                style={{flexShrink:0,padding:"7px 14px",borderRadius:9,border:tab.pendiente?`1.5px solid ${C.accent}`:"none",
+                style={{flex:1,padding:"8px 4px",borderRadius:9,border:tab.pendiente?`1.5px solid ${C.accent}`:"none",
                   fontWeight:tabActivo===tab.id?700:400,fontSize:12,cursor:"pointer",fontFamily:FONT,
+                  textAlign:"center",
                   background:tabActivo===tab.id?C.accent:tab.pendiente?"#F5C84212":"transparent",
                   color:tabActivo===tab.id?"#fff":tab.pendiente?C.accent:C.muted,
                   transition:"all .15s",
