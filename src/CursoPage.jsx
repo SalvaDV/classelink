@@ -389,7 +389,7 @@ function fmtMsgDate(ts){
   return d.toLocaleDateString("es-AR",{day:"numeric",month:"long"});
 }
 
-function ChatCurso({post,session,ayudantes=[],ayudanteEmails=[],onNewMessages,esMio,esAyudante}){
+function ChatCurso({post,session,ayudantes=[],ayudanteEmails=[],onNewMessages,esMio,esAyudante:soyAyudante}){
   const [msgs,setMsgs]=useState([]);
   const [input,setInput]=useState("");
   const [loading,setLoading]=useState(true);
@@ -537,7 +537,7 @@ function ChatCurso({post,session,ayudantes=[],ayudanteEmails=[],onNewMessages,es
           {loadingResumen?"…":"✨ Resumir"}
         </button>}
         {/* Botón videollamada — solo docente/ayudante */}
-        {(esMio||esAyudante)&&<button onClick={()=>setShowJitsi(true)}
+        {(esMio||soyAyudante)&&<button onClick={()=>setShowJitsi(true)}
           title="Iniciar videollamada grupal"
           style={{background:"linear-gradient(135deg,#1A6ED8,#2EC4A0)",border:"none",borderRadius:9,padding:"6px 12px",cursor:"pointer",color:"#fff",fontSize:12,fontWeight:700,fontFamily:FONT,display:"flex",alignItems:"center",gap:5,flexShrink:0,transition:"opacity .15s"}}
           onMouseEnter={e=>e.currentTarget.style.opacity=".85"}
