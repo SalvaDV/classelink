@@ -2802,9 +2802,21 @@ function SkillManager({post,session,onSkillsChange}){
 function SkillProgressViewer({post,session,esMio,esAyudante}){
   const pubId=post.id;
   const miEmail=session.user.email;
-  const skills=getSkills(pubId);
+  const token=session.access_token;
+  const [skills,setSkills]=useState(()=>getSkills(pubId));
   const [progress,setProgress]=useState(()=>getSkillProgress(pubId,miEmail));
   const [editing,setEditing]=useState(false);
+
+  useEffect(()=>{
+    sb.getSkillsDB(pubId,token).then(d=>{if(d?.length)setSkills(d);}).catch(()=>{});
+    sb.getMySkillLevels(miEmail,pubId,token).then(rows=>{
+      if(!rows?.length)return;
+      const prog={};
+      rows.forEach(r=>{prog[r.skill_id]=r.nivel_actual;prog["initial_"+r.skill_id]=r.nivel_inicial;});
+      setProgress(prog);
+      saveSkillProgress(pubId,miEmail,prog);
+    }).catch(()=>{});
+  },[pubId,miEmail]);// eslint-disable-line
 
   if(!skills.length)return null;
 
@@ -2812,6 +2824,13 @@ function SkillProgressViewer({post,session,esMio,esAyudante}){
     const updated={...progress,[skillId]:level};
     setProgress(updated);
     saveSkillProgress(pubId,miEmail,updated);
+    sb.upsertSkillLevel({
+      usuario_email:miEmail,
+      skill_id:skillId,
+      nivel_inicial:progress["initial_"+skillId]??level,
+      nivel_actual:level,
+      source:"manual"
+    },token).catch(()=>{});
   };
 
   // Calcular progreso
@@ -2897,28 +2916,39 @@ function SkillProgressViewer({post,session,esMio,esAyudante}){
 // ─── SKILL OVERVIEW DOCENTE — resumen de todos los alumnos ────────────────────
 function SkillOverview({post,session,inscripciones}){
   const pubId=post.id;
-  const skills=getSkills(pubId);
+  const [skills,setSkills]=useState(()=>getSkills(pubId));
+  const [allLevels,setAllLevels]=useState([]);
+
+  useEffect(()=>{
+    sb.getSkillsDB(pubId,session.access_token).then(d=>{if(d?.length)setSkills(d);}).catch(()=>{});
+    sb.getSkillLevelsByPub(pubId,session.access_token).then(rows=>{if(rows)setAllLevels(rows);}).catch(()=>{});
+  },[pubId]);// eslint-disable-line
+
   if(!skills.length||!inscripciones.length)return null;
 
-  // Promediar niveles por skill entre todos los alumnos
   const avgBySkill=skills.map(s=>{
-    const vals=inscripciones.map(ins=>getSkillProgress(pubId,ins.alumno_email)[s.id]||0);
-    const avg=vals.reduce((a,b)=>a+b,0)/vals.length;
-    return{skill:s,avg:Math.round(avg*10)/10};
+    const rows=allLevels.filter(r=>r.skill_id===s.id);
+    if(!rows.length)return{skill:s,avg:0,count:0};
+    const avg=rows.reduce((a,r)=>a+r.nivel_actual,0)/rows.length;
+    return{skill:s,avg:Math.round(avg*10)/10,count:rows.length};
   });
+
+  if(!avgBySkill.some(x=>x.count>0))return null;
 
   return(
     <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px",marginBottom:14}}>
       <div style={{fontWeight:700,color:C.text,fontSize:14,marginBottom:12}}>Promedio de habilidades del grupo</div>
-      {avgBySkill.map(({skill,avg})=>(
+      {avgBySkill.map(({skill,avg,count})=>(
         <div key={skill.id} style={{marginBottom:10}}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
             <span style={{fontSize:12,color:C.text}}>{skill.nombre}</span>
-            <span style={{fontSize:11,color:SKILL_COLORS[Math.round(avg)],fontWeight:700}}>{avg.toFixed(1)} — {SKILL_LEVELS[Math.round(avg)]}</span>
+            <span style={{fontSize:11,color:SKILL_COLORS[Math.round(avg)],fontWeight:700}}>
+              {count>0?`${avg.toFixed(1)} — ${SKILL_LEVELS[Math.round(avg)]}`:"Sin datos"}
+            </span>
           </div>
-          <div style={{height:7,background:C.border,borderRadius:4,overflow:"hidden"}}>
+          {count>0&&<div style={{height:7,background:C.border,borderRadius:4,overflow:"hidden"}}>
             <div style={{height:"100%",background:SKILL_COLORS[Math.round(avg)]||C.border,borderRadius:4,width:`${(avg/5)*100}%`,transition:"width .5s"}}/>
-          </div>
+          </div>}
         </div>
       ))}
     </div>
@@ -3804,7 +3834,7 @@ function DiagnosticoInicial({post,session,skills}){
   const skill=skills[step];
   const completar=()=>{
     if(step<skills.length-1){setStep(s=>s+1);return;}
-    // Guardar como niveles iniciales en skill progress
+    // Guardar como niveles iniciales en skill progress (localStorage cache)
     const spKey=`cl_sp_${post.id}_${session.user.email}`;
     try{
       const prev=JSON.parse(localStorage.getItem(spKey)||"{}");
@@ -3812,12 +3842,25 @@ function DiagnosticoInicial({post,session,skills}){
       skills.forEach(s=>{
         const n=niveles[s.id]??0;
         updated["initial_"+s.id]=n;
-        if(!prev[s.id])updated[s.id]=n;// también setear nivel actual si no existe
+        if(!prev[s.id])updated[s.id]=n;
       });
       localStorage.setItem(spKey,JSON.stringify(updated));
       localStorage.setItem(KEY,JSON.stringify({completado:new Date().toISOString(),niveles}));
       setEstado({completado:new Date().toISOString(),niveles});
     }catch{}
+    // También persistir en Supabase (fire & forget)
+    const isUUID=/^[0-9a-f]{8}-[0-9a-f]{4}-/i;
+    skills.forEach(s=>{
+      if(!isUUID.test(String(s.id)))return;
+      const n=niveles[s.id]??0;
+      sb.upsertSkillLevel({
+        usuario_email:session.user.email,
+        skill_id:s.id,
+        nivel_inicial:n,
+        nivel_actual:n,
+        source:"diagnostico"
+      },session.access_token).catch(()=>{});
+    });
   };
   const NIVELES_LABEL=["No lo vi nunca","Algo escuché","Entiendo lo básico","Puedo aplicarlo","Lo manejo bien","Lo domino"];
   return(
@@ -4196,8 +4239,8 @@ function CursoPage({post,session,onClose,onUpdatePost}){
   const [mensajesNuevos,setMensajesNuevos]=useState(0);
   const [showDiagnostico,setShowDiagnostico]=useState(false);
   const [showExamenFinal,setShowExamenFinal]=useState(()=>false);
-  const [tabActivo,setTabActivo]=useState(()=>{if(post._openValidacion)return"evaluaciones";try{return sessionStorage.getItem("curso_tab_"+post.id)||"contenido";}catch{return "contenido";}});
-  const setTab=(t)=>{try{sessionStorage.setItem("curso_tab_"+post.id,t);}catch{}if(t==="chat"){setMensajesNuevos(0);try{sessionStorage.setItem("chat_seen_"+post.id,Date.now());}catch{}}setTabActivo(t);};const [nuevoTipo,setNuevoTipo]=useState("video");const [nuevoTitulo,setNuevoTitulo]=useState("");const [nuevoUrl,setNuevoUrl]=useState("");const [nuevoTexto,setNuevoTexto]=useState("");const [savingC,setSavingC]=useState(false);
+  const [tabActivo,setTabActivo]=useState(()=>{if(post._openValidacion)return"aprender";try{return sessionStorage.getItem("curso_tab_"+post.id)||"contenido";}catch{return "contenido";}});
+  const setTab=(t)=>{try{sessionStorage.setItem("curso_tab_"+post.id,t);}catch{}if(t==="chat"||t==="comunidad"){setMensajesNuevos(0);try{sessionStorage.setItem("chat_seen_"+post.id,Date.now());}catch{}}setTabActivo(t);};const [nuevoTipo,setNuevoTipo]=useState("video");const [nuevoTitulo,setNuevoTitulo]=useState("");const [nuevoUrl,setNuevoUrl]=useState("");const [nuevoTexto,setNuevoTexto]=useState("");const [savingC,setSavingC]=useState(false);
   const [calExpanded,setCalExpanded]=useState(false);const [showEditCal,setShowEditCal]=useState(false);const [showFinalizar,setShowFinalizar]=useState(false);const [showDenuncia,setShowDenuncia]=useState(false);const [showCerrarInsc,setShowCerrarInsc]=useState(false);const [localFinalizado,setLocalFinalizado]=useState(!!post.finalizado);const [localCerrado,setLocalCerrado]=useState(!!post.inscripciones_cerradas);
   const [claseActiva,setClaseActiva]=useState(false);const [iniciandoClase,setIniciandoClase]=useState(false);
   const [showJitsiCurso,setShowJitsiCurso]=useState(false);
@@ -4281,7 +4324,7 @@ function CursoPage({post,session,onClose,onUpdatePost}){
     setInscLoading(true);
     try{const r=await sb.insertInscripcion({publicacion_id:post.id,alumno_id:session.user.id,alumno_email:miEmail},session.access_token);setInscripcion(r[0]);sb.insertNotificacion({usuario_id:null,alumno_email:post.autor_email,tipo:"nueva_inscripcion",publicacion_id:post.id,pub_titulo:post.titulo,leida:false},session.access_token).catch(()=>{});
       // Si el curso tiene diagnóstico inicial, ir al tab notas automáticamente
-      if(post.modo==="grupal"||post.modo==="curso")setTimeout(()=>setTab("notas"),400);
+      if(post.modo==="grupal"||post.modo==="curso")setTimeout(()=>setTab("aprender"),400);
     }finally{setInscLoading(false);}
   };
   const [desinscMsg,setDesinscMsg]=useState(false);
@@ -4460,20 +4503,13 @@ function CursoPage({post,session,onClose,onUpdatePost}){
           <div className="curso-tabs" style={{display:"flex",gap:2,marginBottom:14,background:C.card,borderRadius:12,padding:4,border:`1px solid ${C.border}`,overflowX:"auto",scrollbarWidth:"none",WebkitOverflowScrolling:"touch",flexWrap:"nowrap"}}>
             {[
               {id:"contenido",label:"📁 Contenido"},
-              ...(post.tipo==="oferta"&&(esMio||esAyudante)?[
-                {id:"evaluaciones",label:"🎓 Evaluaciones",pendiente:esPendienteValidacion},
-                {id:"notas",label:"📊 Notas"},
-                {id:"progreso",label:"📈 Progreso"},
-              ]:[]),
-              ...(hasCal?[{id:"calendario",label:"📅 Calendario"}]:[]),
-              {id:"flashcards",label:"🃏 Flashcards"},
-              {id:"misnotas",label:"📝 Mis notas"},
-              {id:"foro",label:"🗣 Foro / Q&A"},
-              {id:"chat",label:mensajesNuevos>0?`💬 Chat (${mensajesNuevos})`:"💬 Chat"},
+              {id:"aprender",label:"🎓 Aprender",pendiente:esPendienteValidacion},
+              ...(hasCal||esMio?[{id:"agenda",label:"📅 Agenda"}]:[]),
+              {id:"comunidad",label:mensajesNuevos>0?`💬 Comunidad (${mensajesNuevos})`:"💬 Comunidad"},
             ].map(tab=>(
               <button key={tab.id} onClick={()=>setTab(tab.id)}
-                style={{flexShrink:0,padding:"7px 8px",borderRadius:9,border:tab.pendiente?`1.5px solid ${C.accent}`:"none",
-                  fontWeight:tabActivo===tab.id?700:400,fontSize:11,cursor:"pointer",fontFamily:FONT,
+                style={{flexShrink:0,padding:"7px 14px",borderRadius:9,border:tab.pendiente?`1.5px solid ${C.accent}`:"none",
+                  fontWeight:tabActivo===tab.id?700:400,fontSize:12,cursor:"pointer",fontFamily:FONT,
                   background:tabActivo===tab.id?C.accent:tab.pendiente?"#F5C84212":"transparent",
                   color:tabActivo===tab.id?"#fff":tab.pendiente?C.accent:C.muted,
                   transition:"all .15s",
@@ -4539,65 +4575,59 @@ function CursoPage({post,session,onClose,onUpdatePost}){
           </>
 }
 
-          {/* ── TAB: Evaluaciones (fusionado: validación + formales + quizzes) ── */}
-          {tabActivo==="evaluaciones"&&<div style={{marginBottom:18}}>
-            {/* Wizard si pendiente validación */}
-            {esPendienteValidacion&&(
-              <div style={{marginBottom:18}}>
-                <div style={{background:C.accentDim,border:`1px solid ${C.accent}33`,borderRadius:12,padding:"12px 16px",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
-                  <span style={{fontSize:20}}>⏳</span>
-                  <div><div style={{fontWeight:700,color:C.accent,fontSize:13}}>Validación pendiente</div><div style={{color:C.muted,fontSize:12}}>Completá el proceso para activar tu publicación.</div></div>
-                </div>
-                <ValidacionWizard post={post} session={session} onValidado={()=>{if(onUpdatePost)onUpdatePost({...post,activo:true,estado_validacion:"validado"});dispararAlertasIA({...post,activo:true},session).catch(()=>{});}}/>
-              </div>
-            )}
-            {/* Evaluaciones formales + quizzes */}
-            {!esPendienteValidacion&&(
-              <EvaluacionesFormalesConQuizzes
-                post={post} session={session} esMio={esMio} esAyudante={esAyudante}
-                inscripcion={inscripcion} inscripciones={inscripciones}
-                contenido={contenido} setContenido={setContenido}
-                expandedQuizzes={expandedQuizzes} setExpandedQuizzes={setExpandedQuizzes}
-                editingQuiz={editingQuiz} setEditingQuiz={setEditingQuiz}
-                tieneAcceso={tieneAcceso}
-              />
-            )}
-          </div>}
-
-          {/* ── TAB: Notas ── */}
-          {tabActivo==="notas"&&<div style={{marginBottom:18}}>
+          {/* ── TAB: Aprender ── */}
+          {tabActivo==="aprender"&&<div style={{marginBottom:18}}>
             {(esMio||esAyudante)?(
-              contenido.some(c=>c.tipo==="quiz")&&inscripciones.length>0
-                ?<><SafeWrapper><TablaNotas contenido={contenido} inscripciones={inscripciones} session={session} publicacionId={post.id}/></SafeWrapper>
-                <SkillOverview post={post} session={session} inscripciones={inscripciones}/></>
-                :<div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"30px",textAlign:"center",color:C.muted,fontSize:13}}>
-                    {!contenido.some(c=>c.tipo==="quiz")?"Todavía no hay exámenes cargados.":"Todavía no hay alumnos inscriptos."}
+              <>
+                {/* Validación pendiente */}
+                {esPendienteValidacion&&(
+                  <div style={{marginBottom:18}}>
+                    <div style={{background:C.accentDim,border:`1px solid ${C.accent}33`,borderRadius:12,padding:"12px 16px",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
+                      <span style={{fontSize:20}}>⏳</span>
+                      <div><div style={{fontWeight:700,color:C.accent,fontSize:13}}>Validación pendiente</div><div style={{color:C.muted,fontSize:12}}>Completá el proceso para activar tu publicación.</div></div>
+                    </div>
+                    <ValidacionWizard post={post} session={session} onValidado={()=>{if(onUpdatePost)onUpdatePost({...post,activo:true,estado_validacion:"validado"});dispararAlertasIA({...post,activo:true},session).catch(()=>{});}}/>
                   </div>
+                )}
+                {/* Evaluaciones + quizzes */}
+                {!esPendienteValidacion&&(
+                  <EvaluacionesFormalesConQuizzes
+                    post={post} session={session} esMio={esMio} esAyudante={esAyudante}
+                    inscripcion={inscripcion} inscripciones={inscripciones}
+                    contenido={contenido} setContenido={setContenido}
+                    expandedQuizzes={expandedQuizzes} setExpandedQuizzes={setExpandedQuizzes}
+                    editingQuiz={editingQuiz} setEditingQuiz={setEditingQuiz}
+                    tieneAcceso={tieneAcceso}
+                  />
+                )}
+                {/* Tabla de notas + skills */}
+                {contenido.some(c=>c.tipo==="quiz")&&inscripciones.length>0&&(
+                  <><SafeWrapper><TablaNotas contenido={contenido} inscripciones={inscripciones} session={session} publicacionId={post.id}/></SafeWrapper>
+                  <SkillOverview post={post} session={session} inscripciones={inscripciones}/></>
+                )}
+                {/* Progreso del curso */}
+                <ProgresoCurso post={post} session={session}/>
+              </>
             ):(
-              /* Vista alumno: solo sus propias notas */
+              /* Vista alumno */
               <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px"}}>
-                <div style={{fontWeight:700,color:C.text,fontSize:14,marginBottom:14}}>Mis notas</div>
-                {loading?<Spinner small/>:contenido.filter(c=>c.tipo==="quiz").length===0
-                  ?<div style={{color:C.muted,fontSize:13,textAlign:"center",padding:"20px 0"}}>No hay exámenes en este curso.</div>
-                  :<>
-                  <SafeWrapper><NotasAlumno contenido={contenido} session={session} publicacionId={post.id}/></SafeWrapper>
-                  <NotasPad publicacionId={post.id} session={session}/>
-                  <CertificadoBtn post={post} session={session} inscripcion={inscripcion}/>
-                  <DiagnosticoInicial post={post} session={session} skills={getSkills(post.id)}/>
-                  <SkillProgressViewer post={post} session={session}/>
-                </>
-                }
+                <div style={{fontWeight:700,color:C.text,fontSize:14,marginBottom:14}}>Mi aprendizaje</div>
+                <DiagnosticoInicial post={post} session={session} skills={getSkills(post.id)}/>
+                <SkillProgressViewer post={post} session={session}/>
+                {loading?<Spinner small/>:contenido.filter(c=>c.tipo==="quiz").length>0&&(
+                  <>
+                    <SafeWrapper><NotasAlumno contenido={contenido} session={session} publicacionId={post.id}/></SafeWrapper>
+                    <NotasPad publicacionId={post.id} session={session}/>
+                    <CertificadoBtn post={post} session={session} inscripcion={inscripcion}/>
+                  </>
+                )}
+                <NotasPrivadas storageKey={`cl_nota_${post.id}_${miEmail}`} session={session} post={post}/>
               </div>
             )}
           </div>}
 
-          {/* ── TAB: Progreso ── */}
-          {tabActivo==="progreso"&&(esMio||esAyudante)&&<div style={{marginBottom:18}}>
-            <ProgresoCurso post={post} session={session}/>
-          </div>}
-
-          {/* ── TAB: Calendario ── */}
-          {tabActivo==="calendario"&&(()=>{
+          {/* ── TAB: Agenda ── */}
+          {tabActivo==="agenda"&&(()=>{
             const clasesSinc=(()=>{try{return post.clases_sinc?JSON.parse(post.clases_sinc):[];}catch{return[];}})();
             const descripcion=`Curso en Luderis: ${post.titulo}`;
             return(
@@ -4607,7 +4637,6 @@ function CursoPage({post,session,onClose,onUpdatePost}){
                 <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                   {hasCal&&clasesSinc.length>0&&(
                     <>
-                      {/* Google Calendar: un botón por cada día */}
                       {clasesSinc.map((c,i)=>(
                         <a key={i} href={buildGCalUrl(post.titulo,descripcion,c.dia,c.hora_inicio,c.hora_fin,post.fecha_inicio,post.fecha_fin)}
                           target="_blank" rel="noopener noreferrer"
@@ -4617,7 +4646,6 @@ function CursoPage({post,session,onClose,onUpdatePost}){
                           📅 Google Cal · {c.dia}
                         </a>
                       ))}
-                      {/* Descargar ICS */}
                       <button onClick={()=>descargarICS(generarICS(post.titulo,descripcion,clasesSinc,post.fecha_inicio,post.fecha_fin),post.titulo.slice(0,30))}
                         style={{background:C.accentDim,border:`1px solid ${C.accent}44`,borderRadius:8,color:C.accent,padding:"5px 11px",cursor:"pointer",fontSize:11,fontFamily:FONT,fontWeight:600}}>
                         ⬇ Descargar .ics
@@ -4632,37 +4660,26 @@ function CursoPage({post,session,onClose,onUpdatePost}){
             );
           })()}
 
-          {/* ── TAB: Flashcards ── */}
-          {tabActivo==="flashcards"&&<div style={{marginBottom:18}}>
-            {tieneAcceso
-              ?<Flashcards post={post} session={session} esMio={esMio} esAyudante={esAyudante}/>
-              :<div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"30px",textAlign:"center",color:C.muted,fontSize:13}}>Inscribite para usar las flashcards.</div>
-            }
+          {/* ── TAB: Comunidad (Foro + Chat) ── */}
+          {tabActivo==="comunidad"&&<div style={{marginBottom:18}}>
+            {tieneAcceso?(
+              <>
+                <ForoCurso post={post} session={session} esMio={esMio} esAyudante={esAyudante}/>
+                <div style={{marginTop:14}}>
+                  <ChatCurso post={post} session={session} ayudantes={post.ayudantes||[]} ayudanteEmails={ayudanteEmails} onNewMessages={(n)=>{if(tabActivo!=="comunidad")setMensajesNuevos(prev=>prev+n);}}/>
+                </div>
+              </>
+            ):(
+              <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"30px",textAlign:"center",color:C.muted,fontSize:13}}>Inscribite para participar en el foro y el chat.</div>
+            )}
           </div>}
 
-          {/* ── TAB: Foro ── */}
-          {tabActivo==="foro"&&<div style={{marginBottom:18}}>
-            {tieneAcceso
-              ?<ForoCurso post={post} session={session} esMio={esMio} esAyudante={esAyudante}/>
-              :<div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"30px",textAlign:"center",color:C.muted,fontSize:13}}>Inscribite para participar en el foro.</div>
-            }
-          </div>}
-
-          {/* ── TAB: Notas ── */}
-          {tabActivo==="misnotas"&&(()=>{
-            const notaKey=`cl_nota_${post.id}_${miEmail}`;
-            return(
-              <NotasPrivadas storageKey={notaKey} session={session} post={post}/>
-            );
-          })()}
-
-          {/* ── TAB: Chat ── */}
-          {tabActivo==="chat"&&<div style={{marginBottom:18}}>
-            {tieneAcceso
-              ?<ChatCurso post={post} session={session} ayudantes={post.ayudantes||[]} ayudanteEmails={ayudanteEmails} onNewMessages={(n)=>{if(tabActivo!=="chat")setMensajesNuevos(prev=>prev+n);}}/>
-              :<div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"30px",textAlign:"center",color:C.muted,fontSize:13}}>Inscribite para acceder al chat grupal.</div>
-            }
-          </div>}
+          {/* ── TAB: Contenido — Flashcards al final ── */}
+          {tabActivo==="contenido"&&tieneAcceso&&(
+            <div style={{marginBottom:18}}>
+              <Flashcards post={post} session={session} esMio={esMio} esAyudante={esAyudante}/>
+            </div>
+          )}
 
           <div id="resenas" style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px"}}>
             <ReseñasSeccion post={post} session={session} inscripcion={inscripcion} esMio={esMio}/>

@@ -520,7 +520,7 @@ export const deleteSkill = (id, token) =>
 // ── User Skill Levels ─────────────────────────────────────────────────────────
 
 export const getMySkillLevels = (email, pubId, token) =>
-  db(`user_skill_levels?usuario_email=eq.${encodeURIComponent(email)}&skill_id=in.(select id from skills where publicacion_id=eq.${pubId})`, "GET", null, token)
+  db(`user_skill_levels?select=*,skills!inner(publicacion_id)&usuario_email=eq.${encodeURIComponent(email)}&skills.publicacion_id=eq.${pubId}`, "GET", null, token)
     .catch(() => []);
 
 export const getSkillLevelsByPub = (pubId, token) =>
