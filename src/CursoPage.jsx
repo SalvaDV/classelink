@@ -4686,7 +4686,7 @@ function CursoPage({post,session,onClose,onUpdatePost}){
 
 // ─── INSCRIBIRSE BTN — botón rápido desde el DetailModal ──────────────────────
 // ─── MERCADO PAGO CHECKOUT BTN ────────────────────────────────────────────────
-function MPCheckoutBtn({post,session,onInscripcionOk,precioOverride=null,cantidadOverride=1,paqueteNombre=null}){
+function MPCheckoutBtn({post,session,onInscripcionOk,precioOverride=null,cantidadOverride=1,paqueteNombre=null,tipoPago=null,clasesQty=null}){
   const [estado,setEstado]=useState("idle");
   const pagar=async()=>{
     if(estado==="loading")return;
@@ -4695,14 +4695,17 @@ function MPCheckoutBtn({post,session,onInscripcionOk,precioOverride=null,cantida
       const nombre=sb.getDisplayName(session.user.email)||session.user.email.split("@")[0];
       const precioFinal=precioOverride||Number(post.precio);
       const tituloFinal=paqueteNombre?`${post.titulo} — ${paqueteNombre}`:post.titulo;
+      const esPaquete=tipoPago==="paquete_clase"||!!clasesQty;
       const result=await sb.createMPCheckout({
         publicacion_id:post.id,titulo:tituloFinal,
         descripcion:(post.descripcion||"").slice(0,100),
         precio:precioFinal,modo:post.modo||"particular",
         cantidad:cantidadOverride,alumno_email:session.user.email,
         alumno_nombre:nombre,docente_email:post.autor_email,
+        tipo:esPaquete?"paquete_clase":"clase",
+        clases_cantidad:clasesQty||null,
       },session.access_token);
-      if(result.disabled){toast("El pago online estará disponible pronto. Coordiná directamente con el docente 🤝","info",5000);setEstado("idle");return;}
+      if(result.disabled){toast("El pago online no está disponible en este momento. Intentá más tarde.","info",5000);setEstado("idle");return;}
       try{localStorage.setItem("mp_pending",JSON.stringify({pub_id:post.id,preference_id:result.preference_id}));}catch{}
       window.location.href=result.checkout_url;
     }catch(err){toast("No se pudo iniciar el pago: "+err.message,"error",4000);setEstado("idle");}
@@ -5097,17 +5100,9 @@ function InscripcionModal({post,session,onClose,onDone}){
                       </div>
                     </button>
                   )}
-                  <button onClick={()=>inscribirDirecto("coordinar")}
-                    style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:14,color:C.text,padding:"14px 18px",fontWeight:600,fontSize:14,cursor:"pointer",fontFamily:FONT,display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
-                    <span style={{fontSize:22}}>🤝</span>
-                    <div>
-                      <div>Coordinar con el docente</div>
-                      <div style={{fontWeight:400,fontSize:11,color:C.muted}}>Sin pago online · El docente te contactará</div>
-                    </div>
-                  </button>
                 </>
               )}
-              {metodo==="mp"&&<MPCheckoutBtn post={post} session={session} onInscripcionOk={()=>{onClose();onDone();}} precioOverride={mpPrecio} cantidadOverride={mpCantidad} paqueteNombre={paqueteElegido?paqueteElegido.nombre||`${paqueteElegido.clases} clases`:esPrueba?"Clase de prueba":null}/>}
+              {metodo==="mp"&&<MPCheckoutBtn post={post} session={session} onInscripcionOk={()=>{onClose();onDone();}} precioOverride={mpPrecio} cantidadOverride={mpCantidad} paqueteNombre={paqueteElegido?paqueteElegido.nombre||`${paqueteElegido.clases} clases`:esPrueba?"Clase de prueba":null} tipoPago={paqueteElegido?"paquete_clase":esPrueba?"clase":"clase"} clasesQty={paqueteElegido?paqueteElegido.clases:null}/>}
               {metodo==="stripe"&&<StripeCheckoutBtn post={post} session={session} onDone={onDone} onClose={onClose}/>}
               {loadingInsc&&<div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"center",padding:"8px",color:C.muted,fontSize:13}}><Spinner small/>Procesando…</div>}
               {errInsc&&<div style={{color:C.danger,fontSize:12,padding:"8px 12px",background:C.danger+"10",borderRadius:8,textAlign:"center"}}>{errInsc}</div>}
@@ -5116,7 +5111,7 @@ function InscripcionModal({post,session,onClose,onDone}){
 
         </div>
         <div style={{textAlign:"center",fontSize:11,color:C.muted,padding:"0 22px 16px",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
-          <span>🔒</span> Sin comisión Luderis
+          <span>🔒</span> Pago protegido por Luderis
         </div>
       </div>
     </div>

@@ -701,6 +701,8 @@ function ClasesTab({session,misPubs}){
   const [clases,setClases]=useState([]);
   const [loading,setLoading]=useState(true);
   const [confirmando,setConfirmando]=useState(null);
+  const [liberando,setLiberando]=useState(null);
+  const [liberados,setLiberados]=useState({});// claseId → true
   const [showRegistrar,setShowRegistrar]=useState(false);
   const [regPubId,setRegPubId]=useState("");
   const [regAlumnoEmail,setRegAlumnoEmail]=useState("");
@@ -748,6 +750,15 @@ function ClasesTab({session,misPubs}){
       await cargar();
       toast("Clase registrada","success");
     }catch(e){toast("Error: "+e.message,"error");}finally{setSaving(false);}
+  };
+
+  const liberarPago=async(clase)=>{
+    setLiberando(clase.id);
+    try{
+      await sb.liberarPagoClase(clase.id,session.access_token);
+      setLiberados(prev=>({...prev,[clase.id]:true}));
+      toast("💰 Pago liberado al docente","success");
+    }catch(e){toast("Error al liberar: "+e.message,"error");}finally{setLiberando(null);}
   };
 
   const iS={width:"100%",background:C.surface,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 12px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box",fontFamily:FONT,marginBottom:8};
@@ -832,6 +843,15 @@ function ClasesTab({session,misPubs}){
                     )}
                     {ambasConfirmaron&&(
                       <span style={{fontSize:11,background:C.accentDim,color:C.accent,border:`1px solid ${C.accent}33`,borderRadius:20,padding:"3px 10px",fontWeight:600}}>⭐ Reseña habilitada</span>
+                    )}
+                    {ambasConfirmaron&&soyDocente&&!liberados[c.id]&&(
+                      <button onClick={()=>liberarPago(c)} disabled={liberando===c.id}
+                        style={{background:"#4ECB7115",border:"1px solid #4ECB7133",borderRadius:20,color:C.success,padding:"5px 12px",cursor:"pointer",fontSize:11,fontWeight:600,fontFamily:FONT,opacity:liberando===c.id?0.5:1}}>
+                        {liberando===c.id?"...":"💰 Liberar pago"}
+                      </button>
+                    )}
+                    {ambasConfirmaron&&soyDocente&&liberados[c.id]&&(
+                      <span style={{fontSize:11,color:C.success,fontWeight:600}}>✓ Pago liberado</span>
                     )}
                   </div>
                 </div>
@@ -2015,7 +2035,6 @@ function MiCuentaPage({session,onOpenDetail,onOpenCurso,onEdit,onNew,onOpenChat,
 // Se llama desde OfertasRecibidasModal al aceptar, y desde MiCuentaPage para verlo.
 function AcuerdoModal({oferta,session,onClose,onConfirmado}){
   const [precio,setPrecio]=useState(oferta.precio||"");
-  const [formaPago,setFormaPago]=useState(oferta.forma_pago||"efectivo");
   const [frecuencia,setFrecuencia]=useState(oferta.frecuencia||"");
   const [notas,setNotas]=useState(oferta.notas_acuerdo||"");
   const [saving,setSaving]=useState(false);
@@ -2024,12 +2043,6 @@ function AcuerdoModal({oferta,session,onClose,onConfirmado}){
   // _rol viene del contexto: "docente"=yo soy el ofertante, "alumno"=yo soy el dueño de la búsqueda
   const soyDocente=oferta._rol?oferta._rol==="docente":(oferta.ofertante_email===miEmail);
 
-  const FORMAS=[
-    {v:"efectivo",l:"Efectivo"},
-    {v:"transferencia",l:"Transferencia"},
-    {v:"mercadopago",l:"Mercado Pago"},
-    {v:"otro",l:"Otro / A convenir"},
-  ];
   const FRECUENCIAS=[
     {v:"por_clase",l:"Por clase"},
     {v:"semanal",l:"Semanal"},
@@ -2043,7 +2056,7 @@ function AcuerdoModal({oferta,session,onClose,onConfirmado}){
     try{
       await sb.updateOfertaBusq(oferta.id,{
         precio:precio?parseFloat(precio):null,
-        forma_pago:formaPago,
+        forma_pago:"mercadopago",
         frecuencia:frecuencia||"a_convenir",
         notas_acuerdo:notas.trim()||null,
         acuerdo_confirmado:true,
@@ -2126,7 +2139,7 @@ function AcuerdoModal({oferta,session,onClose,onConfirmado}){
               </div>}
               <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 13px"}}>
                 <div style={{color:C.muted,fontSize:10,fontWeight:700,letterSpacing:1,marginBottom:3}}>FORMA DE PAGO</div>
-                <div style={{color:C.text,fontWeight:600,fontSize:13}}>{FORMAS.find(f=>f.v===oferta.forma_pago)?.l||oferta.forma_pago||"—"}</div>
+                <div style={{color:C.text,fontWeight:600,fontSize:13}}>💳 Mercado Pago</div>
               </div>
               <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 13px"}}>
                 <div style={{color:C.muted,fontSize:10,fontWeight:700,letterSpacing:1,marginBottom:3}}>FRECUENCIA</div>
@@ -2156,12 +2169,13 @@ function AcuerdoModal({oferta,session,onClose,onConfirmado}){
               </div>
             </div>
             <div style={{color:C.muted,fontSize:11,fontWeight:600,letterSpacing:1,marginBottom:5,textTransform:"uppercase"}}>Forma de pago</div>
-            <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:12}}>
-              {FORMAS.map(f=>(
-                <button key={f.v} onClick={()=>setFormaPago(f.v)} style={{padding:"6px 12px",borderRadius:20,fontSize:12,cursor:"pointer",fontFamily:FONT,background:formaPago===f.v?C.accent:C.surface,color:formaPago===f.v?"#fff":C.muted,border:`1px solid ${formaPago===f.v?C.accent:C.border}`,fontWeight:formaPago===f.v?700:400}}>
-                  {f.l}
-                </button>
-              ))}
+            <div style={{background:"linear-gradient(135deg,#009EE320,#0070BA18)",border:"1px solid #009EE344",borderRadius:10,padding:"10px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:20}}>💳</span>
+              <div>
+                <div style={{fontWeight:700,color:C.text,fontSize:13}}>Mercado Pago</div>
+                <div style={{fontSize:11,color:C.muted}}>El pago se realiza a través de Luderis — protegido y garantizado</div>
+              </div>
+              <span style={{marginLeft:"auto",fontSize:10,background:"#4ECB7115",color:C.success,border:"1px solid #4ECB7133",borderRadius:20,padding:"2px 8px",fontWeight:700}}>Único</span>
             </div>
             <div style={{color:C.muted,fontSize:11,fontWeight:600,letterSpacing:1,marginBottom:5,textTransform:"uppercase"}}>Notas adicionales (opcional)</div>
             <textarea value={notas} onChange={e=>setNotas(e.target.value.slice(0,400))} placeholder="Horarios acordados, condiciones especiales, etc." style={{...iS,minHeight:65,resize:"vertical"}}/>

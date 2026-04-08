@@ -594,6 +594,24 @@ export const createMPCheckout = async (data, token) => {
 export const getMisPagos = (email, token) =>
   db(`pagos?alumno_email=eq.${encodeURIComponent(email)}&order=created_at.desc`, "GET", null, token).catch(() => []);
 
+// Libera el pago retenido de un paquete de clases una vez que ambas partes confirman
+export const liberarPagoClase = async (claseId, token) => {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/liberar_pago_clase`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify({ p_clase_id: claseId }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || err.hint || `Error ${res.status}`);
+  }
+  return res.json().catch(() => null);
+};
+
 export const getPagosDocente = (email, token) =>
   db(`pagos?docente_email=eq.${encodeURIComponent(email)}&order=created_at.desc`, "GET", null, token).catch(() => []);
 

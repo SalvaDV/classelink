@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { publicacion_id, titulo, descripcion, precio, modo, cantidad = 1, alumno_email, alumno_nombre, docente_email, tipo } = body;
+    const { publicacion_id, titulo, descripcion, precio, modo, cantidad = 1, clases_cantidad, alumno_email, alumno_nombre, docente_email, tipo } = body;
 
     if (!publicacion_id || !precio || !alumno_email) {
       return new Response(
@@ -63,9 +63,17 @@ Deno.serve(async (req) => {
       }
 
       // El precio enviado por el cliente debe coincidir con el de la BD (tolerancia $1)
+      // Para paquetes: precio enviado es el total del paquete (ya calculado en frontend)
       const precioReal = parseFloat(pub.precio);
-      const precioCliente = parseFloat(precio) * Number(cantidad);
-      if (Math.abs(precioReal - precioCliente) > 1) {
+      const esPaquete = tipo === "paquete_clase" && clases_cantidad;
+      // Paquetes: validar que precio/clase esté dentro de rango razonable del precio base
+      const precioCliente = esPaquete
+        ? parseFloat(precio) // precio total del paquete ya calculado
+        : parseFloat(precio) * Number(cantidad);
+      const precioEsperado = esPaquete ? precioReal * Number(clases_cantidad) : precioReal * Number(cantidad);
+      // Tolerancia mayor para paquetes (descuentos aplicados)
+      const tolerancia = esPaquete ? precioEsperado * 0.5 : 1; // hasta 50% de descuento permitido
+      if (precioCliente > precioEsperado + 1 || precioCliente < precioEsperado - tolerancia) {
         return new Response(
           JSON.stringify({ error: "El precio no coincide", precio_real: precioReal }),
           { status: 400, headers: { ...CORS, "Content-Type": "application/json" } }
@@ -91,7 +99,7 @@ Deno.serve(async (req) => {
         pending: `${APP_URL}?mp=pending&pub=${publicacion_id}`,
       },
       auto_return: "approved",
-      external_reference: JSON.stringify({ publicacion_id, alumno_email, docente_email, modo, tipo }),
+      external_reference: JSON.stringify({ publicacion_id, alumno_email, docente_email, modo, tipo, clases_cantidad: clases_cantidad ?? null }),
       payment_methods: { installments: modo === "curso" ? 12 : 1 },
       statement_descriptor: "LUDERIS",
     };
