@@ -1874,10 +1874,10 @@ export default function App(){
   });
   const sessionRef=useRef(session);useEffect(()=>{sessionRef.current=session;},[session]);
   useEffect(()=>{window.__openAdmin=()=>setShowAdmin(true);return()=>{window.__openAdmin=null;};},[]);
-  const [esAdmin,setEsAdmin]=useState(()=>{
-    const rol=localStorage.getItem("cl_rol_"+(session?.user?.email||""))||"alumno";
-    return rol==="admin"||session?.user?.email==="salvadordevedia@gmail.com";
-  });
+  // Siempre inicia como false — se confirma desde DB (no localStorage) para evitar spoofing
+  const [esAdmin,setEsAdmin]=useState(false);
+  // Rol real del usuario (DB-verified, no localStorage)
+  const [rolSesion,setRolSesion]=useState("alumno");
 
   // Re-sync rol from DB on app load and on window focus
   useEffect(()=>{
@@ -1886,6 +1886,7 @@ export default function App(){
       sb.getUsuarioByEmail(session.user.email,session.access_token).then(u=>{
         if(u?.rol){
           try{localStorage.setItem("cl_rol_"+session.user.email,u.rol);}catch{}
+          setRolSesion(u.rol);
           setEsAdmin(u.rol==="admin"||session.user.email==="salvadordevedia@gmail.com");
         }
       }).catch(()=>{});
