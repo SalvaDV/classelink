@@ -13,7 +13,9 @@ export default function OfertarBtn({post,session}){
       setMiOferta(mia||false);
     }).catch(()=>setMiOferta(false));
   },[post.id,session.user.email,session.access_token]); // eslint-disable-line
+  // Solo para búsquedas de clases particulares — cursos tienen precio fijo
   if(post.tipo!=="busqueda"||post.autor_email===session.user.email||post.activo===false||post.finalizado)return null;
+  if(post.modo==="curso"||post.modo==="grupal")return null;
   if(miOferta===null)return null;// cargando
   if(miOferta&&miOferta.estado==="pendiente"){
     const diasEspera=miOferta.created_at?Math.floor((Date.now()-new Date(miOferta.created_at))/86400000):null;

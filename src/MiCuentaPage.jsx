@@ -612,15 +612,11 @@ function BusquedasConfirmList({busquedas,ofertasMap,session,toggle,toggling,onEd
 }
 
 // ─── CONTRA RESPONDEDOR — lado docente ante contraoferta del alumno ─────────────
-function ContraRespondedor({oferta,session,onActualizado,onVer}){
+function ContraRespondedor({oferta,session,onActualizado,onVer,onChat}){
   const [popup,setPopup]=useState(false);
-  const [modo,setModo]=useState("ver");// "ver" | "contra"
-  const [precio,setPrecio]=useState("");
-  const [tipo,setTipo]=useState(oferta.precio_tipo||"hora");
-  const [msg,setMsg]=useState("");
   const [saving,setSaving]=useState(false);
 
-  const cerrar=()=>{setPopup(false);setModo("ver");setPrecio("");setMsg("");};
+  const cerrar=()=>{setPopup(false);};
 
   const aceptar=async()=>{
     setSaving(true);
@@ -659,78 +655,38 @@ function ContraRespondedor({oferta,session,onActualizado,onVer}){
       cerrar();onActualizado();
     }catch(e){alert(e.message);}finally{setSaving(false);}
   };
-  const enviarContra=async()=>{
-    if(!precio)return;setSaving(true);
-    try{
-      await sb.updateOfertaBusq(oferta.id,{contraoferta_precio:parseFloat(precio),contraoferta_tipo:tipo,contraoferta_mensaje:msg,contraoferta_de:"docente",leida:false},session.access_token);
-      sb.insertNotificacion({usuario_id:null,alumno_email:oferta.busqueda_autor_email,tipo:"contraoferta",publicacion_id:oferta.busqueda_id,pub_titulo:oferta.busqueda_titulo,leida:false},session.access_token).catch(()=>{});
-      cerrar();onActualizado();
-    }catch(e){alert(e.message);}finally{setSaving(false);}
-  };
-
-  const iS={width:"100%",background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,padding:"9px 12px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box",fontFamily:FONT,marginBottom:9};
 
   return(
     <>
-      {/* Badge compacto que abre el popup */}
-      <span onClick={()=>{setPopup(true);if(onVer)onVer();}} style={{fontSize:10,fontWeight:700,color:"#C85CE0",background:"#C85CE015",border:"1px solid #C85CE033",borderRadius:20,padding:"3px 10px",cursor:"pointer",flexShrink:0,alignSelf:"center",whiteSpace:"nowrap"}}>
-        ↔ Ver contraoferta
+      <span onClick={()=>{setPopup(true);if(onVer)onVer();}} style={{fontSize:10,fontWeight:700,color:C.accent,background:C.accentDim,border:`1px solid ${C.accent}33`,borderRadius:20,padding:"3px 10px",cursor:"pointer",flexShrink:0,alignSelf:"center",whiteSpace:"nowrap"}}>
+        Ver oferta recibida
       </span>
 
       {popup&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:20,fontFamily:FONT}} onClick={cerrar}>
-          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:18,padding:"26px 28px",width:"min(440px,94vw)"}} onClick={e=>e.stopPropagation()}>
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:18,padding:"26px 28px",width:"min(420px,94vw)"}} onClick={e=>e.stopPropagation()}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-              <h3 style={{color:C.text,margin:0,fontSize:16,fontWeight:700}}>Contraoferta recibida</h3>
+              <h3 style={{color:C.text,margin:0,fontSize:16,fontWeight:700}}>Oferta del alumno</h3>
               <button onClick={cerrar} style={{background:"none",border:"none",color:C.muted,fontSize:20,cursor:"pointer"}}>×</button>
             </div>
-
-            {/* Info de la búsqueda */}
             <div style={{background:C.card,borderRadius:10,padding:"10px 13px",marginBottom:14}}>
-              <div style={{fontSize:12,color:C.muted}}>{oferta.busqueda_titulo||"Búsqueda"}</div>
-              <div style={{fontSize:11,color:C.muted,marginTop:2}}>Tu oferta original: <span style={{color:C.accent,fontWeight:600}}>{fmtPrice(oferta.precio)} /{oferta.precio_tipo}</span></div>
+              <div style={{fontSize:12,color:C.muted,marginBottom:2}}>{oferta.busqueda_titulo||"Búsqueda"}</div>
+              {oferta.contraoferta_precio
+                ?<div style={{fontSize:16,color:C.accent,fontWeight:700}}>{fmtPrice(oferta.contraoferta_precio)} <span style={{fontSize:12,fontWeight:400,color:C.muted}}>/{oferta.contraoferta_tipo||oferta.precio_tipo}</span></div>
+                :<div style={{fontSize:12,color:C.muted}}>Tu oferta: <span style={{color:C.accent,fontWeight:600}}>{oferta.precio?`${fmtPrice(oferta.precio)} /${oferta.precio_tipo}`:"sin precio definido"}</span></div>}
+              {oferta.contraoferta_mensaje&&<p style={{color:C.muted,fontSize:12,margin:"6px 0 0",lineHeight:1.5}}>{oferta.contraoferta_mensaje}</p>}
             </div>
-
-            {/* La contraoferta */}
-            <div style={{background:"#C85CE011",border:"1px solid #C85CE033",borderRadius:10,padding:"12px 15px",marginBottom:16}}>
-              <div style={{fontSize:11,fontWeight:700,color:"#C85CE0",marginBottom:6}}>↔ Propuesta del alumno</div>
-              <div style={{fontSize:18,color:C.accent,fontWeight:700,marginBottom:4}}>{fmtPrice(oferta.contraoferta_precio)} <span style={{fontSize:13,fontWeight:400,color:C.muted}}>/{oferta.contraoferta_tipo||oferta.precio_tipo}</span></div>
-              {oferta.contraoferta_mensaje&&<p style={{color:C.muted,fontSize:13,margin:0,lineHeight:1.5}}>{oferta.contraoferta_mensaje}</p>}
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              <button onClick={aceptar} disabled={saving} style={{background:"#4ECB7122",border:"1px solid #4ECB7144",borderRadius:10,color:C.success,padding:"11px",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:FONT,opacity:saving?0.5:1}}>
+                ✓ Aceptar y acordar
+              </button>
+              {onChat&&<button onClick={()=>{cerrar();onChat(oferta);}} style={{background:C.accentDim,border:`1px solid ${C.accent}33`,borderRadius:10,color:C.accent,padding:"11px",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:FONT}}>
+                💬 Negociar por chat
+              </button>}
+              <button onClick={rechazar} disabled={saving} style={{background:"#E05C5C15",border:"1px solid #E05C5C33",borderRadius:10,color:C.danger,padding:"11px",cursor:"pointer",fontSize:13,fontFamily:FONT,opacity:saving?0.5:1}}>
+                ✗ Rechazar
+              </button>
             </div>
-
-            {modo==="ver"&&(
-              <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                <button onClick={aceptar} disabled={saving} style={{background:"#4ECB7122",border:"1px solid #4ECB7144",borderRadius:10,color:C.success,padding:"11px",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:FONT,opacity:saving?0.5:1}}>
-                  ✓ Aceptar {fmtPrice(oferta.contraoferta_precio)} /{oferta.contraoferta_tipo||oferta.precio_tipo}
-                </button>
-                <button onClick={()=>setModo("contra")} disabled={saving} style={{background:"#C85CE015",border:"1px solid #C85CE033",borderRadius:10,color:"#C85CE0",padding:"11px",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:FONT}}>
-                  ↔ Volver a ofertar
-                </button>
-                <button onClick={rechazar} disabled={saving} style={{background:"#E05C5C15",border:"1px solid #E05C5C33",borderRadius:10,color:C.danger,padding:"11px",cursor:"pointer",fontSize:13,fontFamily:FONT,opacity:saving?0.5:1}}>
-                  ✗ Rechazar
-                </button>
-              </div>
-            )}
-
-            {modo==="contra"&&(
-              <div>
-                <Label>Tu nueva propuesta de precio</Label>
-                <div style={{display:"flex",gap:7,marginBottom:9}}>
-                  <input value={precio} onChange={e=>setPrecio(e.target.value)} placeholder="Monto" type="number" min="0" style={{...iS,margin:0,flex:2}}/>
-                  <select value={tipo} onChange={e=>setTipo(e.target.value)} style={{...iS,margin:0,flex:1,cursor:"pointer",colorScheme:localStorage.getItem("cl_theme")||"light"}}>
-                    <option value="hora">/ hora</option>
-                    <option value="clase">/ clase</option>
-                    <option value="mes">/ mes</option>
-                  </select>
-                </div>
-                <Label>Mensaje (opcional)</Label>
-                <textarea value={msg} onChange={e=>setMsg(e.target.value)} placeholder="Explicá tu propuesta..." style={{...iS,minHeight:70,resize:"vertical"}}/>
-                <div style={{display:"flex",gap:8}}>
-                  <button onClick={()=>setModo("ver")} style={{flex:1,background:"transparent",border:`1px solid ${C.border}`,borderRadius:10,color:C.muted,padding:"10px",cursor:"pointer",fontSize:13,fontFamily:FONT}}>← Volver</button>
-                  <Btn onClick={enviarContra} disabled={saving||!precio} style={{flex:2,padding:"10px"}}>{saving?"Enviando...":"Enviar contraoferta →"}</Btn>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}

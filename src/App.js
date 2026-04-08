@@ -1058,7 +1058,6 @@ function ContraofertaModal({oferta,miRol,session,onClose,onEnviada}){
 function OfertasRecibidasModal({post,session,onClose,onContactar}){
   const [ofertas,setOfertas]=useState([]);const [loading,setLoading]=useState(true);const [saving,setSaving]=useState(null);
   const [acuerdoOferta,setAcuerdoOferta]=useState(null);
-  const [contraModal,setContraModal]=useState(null);// oferta sobre la que se contraoferta
   const cargar=useCallback(async()=>{
     const all=await sb.getOfertasSobre(post.id,session.access_token);
     // Marcar como leídas en state local inmediatamente (borra el borde amarillo al instante)
@@ -1130,13 +1129,12 @@ function OfertasRecibidasModal({post,session,onClose,onContactar}){
                         <div style={{fontSize:12,color:C.muted,marginTop:2}}>{o.contraoferta_mensaje}</div>
                       </div>
                     )}
-                    {o.estado==="pendiente"&&!contraEsDeAlumno&&<div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                      <button onClick={()=>responder(o,"aceptada")} disabled={saving===o.id} style={{background:"#4ECB7122",border:"1px solid #4ECB7144",borderRadius:8,color:C.success,padding:"6px 12px",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:FONT}}>Aceptar</button>
-                      <button onClick={()=>setContraModal(o)} disabled={saving===o.id} style={{background:"#C85CE015",border:"1px solid #C85CE033",borderRadius:8,color:"#C85CE0",padding:"6px 12px",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:FONT}}>Contraoferta</button>
-                      <button onClick={()=>responder(o,"rechazada")} disabled={saving===o.id} style={{background:"#E05C5C15",border:"1px solid #E05C5C33",borderRadius:8,color:C.danger,padding:"6px 12px",cursor:"pointer",fontSize:12,fontFamily:FONT}}>Rechazar</button>
+                    {o.estado==="pendiente"&&<div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+                      <button onClick={()=>responder(o,"aceptada")} disabled={saving===o.id} style={{background:"#4ECB7122",border:"1px solid #4ECB7144",borderRadius:8,color:C.success,padding:"6px 12px",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:FONT}}>✓ Aceptar</button>
+                      <button onClick={()=>{onContactar({id:post.id,autor_email:o.ofertante_email,titulo:post.titulo,autor_nombre:o.ofertante_nombre});onClose();}} disabled={saving===o.id} style={{background:C.accentDim,border:`1px solid ${C.accent}33`,borderRadius:8,color:C.accent,padding:"6px 12px",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:FONT}}>💬 Negociar</button>
+                      <button onClick={()=>responder(o,"rechazada")} disabled={saving===o.id} style={{background:"#E05C5C15",border:"1px solid #E05C5C33",borderRadius:8,color:C.danger,padding:"6px 12px",cursor:"pointer",fontSize:12,fontFamily:FONT}}>✗ Rechazar</button>
                       <span style={{fontSize:11,color:C.muted,alignSelf:"center"}}>{fmt(o.created_at)}</span>
                     </div>}
-                    {o.estado==="pendiente"&&contraEsDeAlumno&&<div style={{fontSize:11,color:C.muted,fontStyle:"italic"}}>Esperando respuesta del docente…</div>}
                     {o.estado==="aceptada"&&<div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
                       <Btn onClick={()=>{onContactar({id:post.id,autor_email:o.ofertante_email,titulo:post.titulo,autor_nombre:o.ofertante_nombre});onClose();}} style={{padding:"6px 14px",fontSize:12}}>Chatear</Btn>
                       <button onClick={()=>setAcuerdoOferta({...o,busqueda_titulo:post.titulo,busqueda_autor_email:session.user.email})} style={{background:"#4ECB7115",border:"1px solid #4ECB7133",borderRadius:9,color:C.success,padding:"6px 13px",cursor:"pointer",fontSize:12,fontFamily:FONT,fontWeight:700}}>
@@ -1152,7 +1150,6 @@ function OfertasRecibidasModal({post,session,onClose,onContactar}){
       </div>
     </Modal>
     {acuerdoOferta&&<AcuerdoModal oferta={acuerdoOferta} session={session} onClose={()=>setAcuerdoOferta(null)} onConfirmado={()=>{cargar();setAcuerdoOferta(null);}}/>}
-    {contraModal&&<ContraofertaModal oferta={contraModal} miRol="alumno" session={session} onClose={()=>setContraModal(null)} onEnviada={()=>{setContraModal(null);cargar();}}/>}
     </>
   );
 }
