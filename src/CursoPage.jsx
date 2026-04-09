@@ -9,6 +9,7 @@ import {
   CalendarioCurso,
   LUD,
   CATEGORIAS_DATA,
+  getPubTipo,
 } from "./shared";
 import { dispararAlertasIA } from "./PostFormModal";
 import { DenunciaModal, FinalizarClaseModal, ContraofertaModal } from "./App";
@@ -4395,9 +4396,15 @@ function CursoPage({post,session,onClose,onUpdatePost}){
           <button onClick={()=>setShowJitsiCurso(true)} style={{background:"#C80000",border:"none",borderRadius:9,color:"#fff",padding:"7px 16px",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:FONT,display:"flex",alignItems:"center",gap:6}}>📹 Unirme ahora</button>
         </div>
       )}
-      <div style={{position:"sticky",top:0,zIndex:10,background:C.sidebar,borderBottom:`1px solid ${C.border}`,padding:"10px 14px",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+      <div style={{position:"sticky",top:0,zIndex:10,background:C.sidebar,borderBottom:`2px solid ${getPubTipo(post).accent}`,padding:"10px 14px",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
         <button onClick={onClose} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,color:C.text,padding:"7px 12px",cursor:"pointer",fontSize:13,fontFamily:FONT}}>← Volver</button>
-        <div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,color:C.text,fontSize:15,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.titulo}</div><div style={{fontSize:11,color:C.muted}}>{post.materia} · {post.autor_nombre||safeDisplayName(post.autor_nombre,post.autor_email)}</div></div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:1}}>
+            <span style={{fontSize:10,fontWeight:700,color:getPubTipo(post).accent,background:getPubTipo(post).dim,borderRadius:20,padding:"2px 8px",flexShrink:0}}>{getPubTipo(post).emoji} {getPubTipo(post).label}</span>
+          </div>
+          <div style={{fontWeight:700,color:C.text,fontSize:15,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.titulo}</div>
+          <div style={{fontSize:11,color:C.muted}}>{post.materia} · {post.autor_nombre||safeDisplayName(post.autor_nombre,post.autor_email)}</div>
+        </div>
         <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
           {esMio&&!localFinalizado&&!localCerrado&&<button onClick={()=>setShowCerrarInsc(true)} style={{background:"#E0955C15",border:"1px solid #E0955C33",borderRadius:9,color:C.warn,padding:"6px 12px",cursor:"pointer",fontSize:12,fontFamily:FONT,fontWeight:600}}>Cerrar inscripciones</button>}
           {esMio&&!localFinalizado&&localCerrado&&<button onClick={async()=>{try{await sb.updatePublicacion(post.id,{inscripciones_cerradas:false},session.access_token);post.inscripciones_cerradas=false;post.inscripcionesCerradas=false;setLocalCerrado(false);if(onUpdatePost)onUpdatePost({...post,inscripciones_cerradas:false});}catch(e){alert("Error: "+e.message);}}} style={{background:"#4ECB7115",border:"1px solid #4ECB7133",borderRadius:9,color:C.success,padding:"6px 12px",cursor:"pointer",fontSize:12,fontFamily:FONT,fontWeight:600}}>Reabrir inscripciones</button>}

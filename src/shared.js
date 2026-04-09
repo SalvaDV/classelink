@@ -52,6 +52,21 @@ export const CATEGORIAS_DATA={
   "Otros":                {emoji:"✨",grad:"linear-gradient(135deg,#666,#999)",bg:"#666"},
 };
 
+// ─── TIPO DE PUBLICACIÓN — identidad visual ────────────────────────────────────
+export const TIPO_PUB={
+  curso:{
+    accent:"#1A6ED8",grad:"linear-gradient(135deg,#1A6ED8,#2EC4A0)",
+    dim:"#1A6ED810",border:"#1A6ED830",label:"Curso",emoji:"🎓",
+    bg:"#EEF6FF",
+  },
+  particular:{
+    accent:"#E8881A",grad:"linear-gradient(135deg,#E8881A,#F5C842)",
+    dim:"#E8881A10",border:"#E8881A30",label:"Clase particular",emoji:"👤",
+    bg:"#FEF6EE",
+  },
+};
+export const getPubTipo=(pub)=>(pub?.modo==="particular")?TIPO_PUB.particular:TIPO_PUB.curso;
+
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 export const avatarColor=(l)=>["#F5C842","#4ECB71","#E05C5C","#5CA8E0","#C85CE0"][(l||"?").toUpperCase().charCodeAt(0)%5];
 export const fmt=(d)=>d?new Date(d).toLocaleDateString("es-AR",{day:"numeric",month:"short",year:"numeric"}):"";

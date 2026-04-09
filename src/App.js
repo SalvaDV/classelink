@@ -3,7 +3,7 @@ import * as sb from "./supabase";
 import {
   C, FONT, LUD, _themeKey,
   applyTheme, toast, ToastContainer,
-  MATERIAS, CATEGORIAS_DATA,
+  MATERIAS, CATEGORIAS_DATA, getPubTipo,
   avatarColor, fmt, fmtRel, fmtPrice, calcAvg, calcDuracion,
   MONEDA_SYM, setLang, STRINGS, t,
   maskEmail, safeDisplayName, CONTACT_REGEX, sanitizeContactInfo,
@@ -586,7 +586,7 @@ function ExplorePage({session,onOpenChat,onOpenDetail,onOpenPerfil,onOpenCurso})
                 <div style={{display:"flex",gap:14}} className="cl-hscroll">
                   {data.map(p=>(
                     <div key={p.id} onClick={()=>onOpenDetail(p)}
-                      style={{background:p.tipo==="busqueda"?"#FFFBEB":C.surface,border:`1px solid ${p.tipo==="busqueda"?"#F59E0B44":C.border}`,borderRadius:12,padding:"16px",cursor:"pointer",flexShrink:0,width:"min(220px,72vw)",transition:"all .18s",borderTop:`3px solid ${p.tipo==="busqueda"?"#F59E0B":C.accent}`}}
+                      style={{background:p.tipo==="busqueda"?"#FFFBEB":C.surface,border:`1px solid ${p.tipo==="busqueda"?"#F59E0B44":C.border}`,borderRadius:12,padding:"16px",cursor:"pointer",flexShrink:0,width:"min(220px,72vw)",transition:"all .18s",borderTop:`3px solid ${p.tipo==="busqueda"?"#F59E0B":getPubTipo(p).accent}`}}
                       onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,.09)";e.currentTarget.style.transform="translateY(-2px)";}}
                       onMouseLeave={e=>{e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="none";}}>
                       {/* Avatar + nombre */}
@@ -603,7 +603,8 @@ function ExplorePage({session,onOpenChat,onOpenDetail,onOpenPerfil,onOpenCurso})
                       {/* Tags */}
                       <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:8}}>
                         <Tag tipo={p.tipo}/>
-                        {(p.modo==="curso"||p.modo==="grupal")&&<span style={{fontSize:10,color:C.success,background:C.success+"12",borderRadius:20,padding:"2px 8px",fontWeight:600}}>Curso</span>}
+                        {(p.modo==="curso"||p.modo==="grupal")&&<span style={{fontSize:10,color:getPubTipo(p).accent,background:getPubTipo(p).dim,borderRadius:20,padding:"2px 8px",fontWeight:600}}>🎓 Curso</span>}
+                        {p.modo==="particular"&&<span style={{fontSize:10,color:getPubTipo(p).accent,background:getPubTipo(p).dim,borderRadius:20,padding:"2px 8px",fontWeight:600}}>👤 Clase</span>}
                         {p.modalidad==="virtual"&&<span style={{fontSize:10,color:C.info,background:C.info+"12",borderRadius:20,padding:"2px 8px",fontWeight:600}}>🌐 Virtual</span>}
                         {p.modalidad==="presencial"&&<span style={{fontSize:10,color:C.muted,background:C.bg,borderRadius:20,padding:"2px 8px",border:`1px solid ${C.border}`}}>📍 Presencial</span>}
                       </div>
@@ -617,7 +618,7 @@ function ExplorePage({session,onOpenChat,onOpenDetail,onOpenPerfil,onOpenCurso})
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                         {p.tipo==="busqueda"
                           ?<div style={{fontSize:12,color:"#92400E",fontWeight:600,display:"flex",alignItems:"center",gap:4}}>🔍 Busca docente</div>
-                          :p.precio?<div style={{fontWeight:800,color:C.accent,fontSize:15}}>{fmtPrice(p.precio,p.moneda)}<span style={{fontSize:11,fontWeight:400,color:C.muted}}> /{p.precio_tipo||"hora"}</span></div>
+                          :p.precio?<div style={{fontWeight:800,color:getPubTipo(p).accent,fontSize:15}}>{fmtPrice(p.precio,p.moneda)}<span style={{fontSize:11,fontWeight:400,color:C.muted}}> /{p.precio_tipo||"hora"}</span></div>
                           :<div style={{fontWeight:600,color:C.success,fontSize:13}}>Gratis</div>}
                         {p.cantidad_inscriptos>0&&<span style={{fontSize:10,color:C.muted}}>👥{p.cantidad_inscriptos}</span>}
                       </div>
