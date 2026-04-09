@@ -357,10 +357,17 @@ function ExplorePage({session,onOpenChat,onOpenDetail,onOpenPerfil,onOpenCurso})
 
   useEffect(()=>{setPagina(1);},[busquedaDebounced,filtroTipo,filtroModo,filtroModalidad,filtroSinc,filtroMateria,sliderMin,sliderMax,filtroFechaDesde,filtroFechaHasta,filtroDurMin,iaResults]);// eslint-disable-line
   useEffect(()=>{if(isSentinelVisible&&!loading)setPagina(p=>p+1);},[isSentinelVisible]);// eslint-disable-line
+  // Propagate section accent to CSS custom properties so the entire app page reflects it
+  const sT=seccion==="clases"?TIPO_PUB.particular:seccion==="pedidos"?TIPO_PUB.pedido:TIPO_PUB.curso;
+  useEffect(()=>{
+    document.documentElement.style.setProperty('--cl-section-accent', sT.accent);
+    document.documentElement.style.setProperty('--cl-section-tint', sT.accent+'13');
+    document.documentElement.style.setProperty('--cl-section-grad', sT.grad);
+  },[sT.accent,sT.grad]);
   const clearAll=()=>{setFiltroTipo("all");setFiltroModo("all");setFiltroModalidad("all");setFiltroSinc("all");setFiltroMateria("");setSliderMin(precioMin);setSliderMax(precioMax);setFiltroFechaDesde("");setFiltroFechaHasta("");setFiltroDurMin(0);setBusqueda("");setFiltroUbicacion("");setFiltroMoneda("");};
   const selS={width:"100%",background:C.bg,border:`1px solid ${C.border}`,borderRadius:6,padding:"7px 10px",color:C.text,fontSize:12,outline:"none",fontFamily:FONT,cursor:"pointer",boxSizing:"border-box",colorScheme:localStorage.getItem("cl_theme")||"light"};
   const FL=({ch})=><div style={{fontSize:11,fontWeight:600,color:C.muted,marginBottom:7,letterSpacing:.2}}>{ch}</div>;
-  const FC=({label,active,onClick})=>(<button onClick={onClick} style={{padding:"4px 12px",borderRadius:20,fontSize:12,fontWeight:active?600:400,cursor:"pointer",fontFamily:FONT,background:active?C.accent:"transparent",color:active?"#fff":C.muted,border:`1px solid ${active?C.accent:C.border}`,marginBottom:5,marginRight:5,transition:"all .12s"}}>{label}</button>);
+  const FC=({label,active,onClick})=>(<button onClick={onClick} style={{padding:"4px 12px",borderRadius:20,fontSize:12,fontWeight:active?600:400,cursor:"pointer",fontFamily:FONT,background:active?sT.accent:"transparent",color:active?"#fff":C.muted,border:`1px solid ${active?sT.accent:C.border}`,marginBottom:5,marginRight:5,transition:"all .12s"}}>{label}</button>);
 
   // Barra de búsqueda — click abre el modal IA (es el buscador principal)
   const searchBarJSX=(
@@ -399,9 +406,8 @@ function ExplorePage({session,onOpenChat,onOpenDetail,onOpenPerfil,onOpenCurso})
   const busquedasCursos=posts.filter(p=>p.tipo==="busqueda"&&p.autor_email!==session.user.email&&(p.modo==="curso"||p.modo==="grupal"||!p.modo)).slice(0,8);
   const busquedasClases=posts.filter(p=>p.tipo==="busqueda"&&p.autor_email!==session.user.email&&(p.modo==="particular"||!p.modo)).slice(0,8);
 
-  const seccionTint=seccion==="clases"?`${TIPO_PUB.particular.accent}07`:seccion==="pedidos"?`${TIPO_PUB.pedido.accent}07`:`${TIPO_PUB.curso.accent}07`;
   return(<>
-    <div style={{fontFamily:FONT,animation:"fadeUp .2s ease",background:seccionTint,minHeight:"100vh",transition:"background .4s ease"}}>
+    <div style={{fontFamily:FONT,animation:"fadeUp .2s ease"}}>
 
       {/* Drawer de filtros — siempre disponible */}
       {panelOpen&&(
@@ -450,7 +456,7 @@ function ExplorePage({session,onOpenChat,onOpenDetail,onOpenPerfil,onOpenCurso})
               {maxDurSemanas>0&&(<div style={{marginBottom:16}}><FL ch="Duración mínima"/><select value={filtroDurMin} onChange={e=>setFiltroDurMin(+e.target.value)} style={selS}><option value={0}>Cualquier duración</option>{[1,2,4,8,12,16].filter(v=>v<maxDurSemanas).map(v=><option key={v} value={v}>{v} sem.</option>)}</select></div>)}
             </div>
             <div style={{padding:"14px 20px",borderTop:`1px solid ${C.border}`,position:"sticky",bottom:0,background:C.surface}}>
-              <button onClick={()=>{setPanelOpen(false);setModoVista("resultados");}} style={{width:"100%",background:LUD.grad,border:"none",borderRadius:20,color:"#fff",padding:"13px",fontWeight:600,fontSize:14,cursor:"pointer",fontFamily:FONT,boxShadow:"0 4px 14px rgba(26,110,216,.3)"}}>
+              <button onClick={()=>{setPanelOpen(false);setModoVista("resultados");}} style={{width:"100%",background:sT.grad,border:"none",borderRadius:20,color:"#fff",padding:"13px",fontWeight:600,fontSize:14,cursor:"pointer",fontFamily:FONT,boxShadow:`0 4px 14px ${sT.accent}40`}}>
                 Ver {filtered.length} resultado{filtered.length!==1?"s":""}
               </button>
             </div>
@@ -1842,7 +1848,7 @@ function ChatBotWidget(){
       {open&&(
         <div style={{position:"absolute",bottom:64,right:0,width:"min(340px,88vw)",background:C.surface,border:`1px solid ${C.border}`,borderRadius:20,boxShadow:"0 8px 32px #0008",display:"flex",flexDirection:"column",maxHeight:460,overflow:"hidden"}}>
           {/* Header */}
-          <div style={{background:C.accent,borderRadius:"20px 20px 0 0",padding:"14px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{background:"var(--cl-section-accent)",borderRadius:"20px 20px 0 0",padding:"14px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <div style={{display:"flex",alignItems:"center",gap:9}}>
               <span style={{fontSize:20}}>🎓</span>
               <div>
@@ -1871,7 +1877,7 @@ function ChatBotWidget(){
                     </button>
                   </div>
                 ):(
-                  <div style={{background:m.from==="user"?C.accent:C.card,color:m.from==="user"?"#fff":C.text,borderRadius:m.from==="user"?"16px 16px 4px 16px":"16px 16px 16px 4px",padding:"9px 13px",maxWidth:220,fontSize:12,lineHeight:1.5,border:`1px solid ${m.from==="user"?"transparent":C.border}`}}>{m.text}</div>
+                  <div style={{background:m.from==="user"?"var(--cl-section-accent)":C.card,color:m.from==="user"?"#fff":C.text,borderRadius:m.from==="user"?"16px 16px 4px 16px":"16px 16px 16px 4px",padding:"9px 13px",maxWidth:220,fontSize:12,lineHeight:1.5,border:`1px solid ${m.from==="user"?"transparent":C.border}`}}>{m.text}</div>
                 )}
               </div>
             ))}
@@ -1881,12 +1887,12 @@ function ChatBotWidget(){
           {/* Input */}
           <div style={{padding:"10px 12px",borderTop:`1px solid ${C.border}`,display:"flex",gap:8}}>
             <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendMsg()} placeholder="Escribí tu pregunta..." style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:20,padding:"8px 13px",color:C.text,fontSize:12,outline:"none",fontFamily:FONT}}/>
-            <button onClick={()=>sendMsg()} disabled={!input.trim()||loading} style={{background:C.accent,border:"none",borderRadius:"50%",width:34,height:34,cursor:"pointer",fontSize:15,flexShrink:0,opacity:!input.trim()?0.5:1}}>↑</button>
+            <button onClick={()=>sendMsg()} disabled={!input.trim()||loading} style={{background:"var(--cl-section-accent)",border:"none",borderRadius:"50%",width:34,height:34,cursor:"pointer",fontSize:15,flexShrink:0,opacity:!input.trim()?0.5:1}}>↑</button>
           </div>
         </div>
       )}
       {/* FAB button */}
-      <button onClick={()=>setOpen(v=>!v)} style={{width:52,height:52,borderRadius:"50%",background:open?C.border:C.accent,border:"none",cursor:"pointer",fontSize:22,boxShadow:"0 4px 16px #0006",transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <button onClick={()=>setOpen(v=>!v)} style={{width:52,height:52,borderRadius:"50%",background:open?C.border:"var(--cl-section-accent)",border:"none",cursor:"pointer",fontSize:22,boxShadow:"0 4px 16px #0006",transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center"}}>
         {open?"×":"💬"}
       </button>
       <style>{`@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}`}</style>
@@ -2230,7 +2236,7 @@ export default function App(){
   }
   const SW=isMobile?0:224;
   return(
-    <div style={{minHeight:"100vh",background:C.bg,fontFamily:FONT,color:C.text,display:"flex"}}>
+    <div style={{minHeight:"100vh",background:`var(--cl-section-tint, ${C.bg})`,fontFamily:FONT,color:C.text,display:"flex",transition:"background .4s ease"}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes tabPulse{0%,100%{opacity:1}50%{opacity:0.5}}*{box-sizing:border-box}html,body,#root{background:${C.bg};color:${C.text};min-height:100vh;font-family:${FONT}}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:${C.border};border-radius:3px}::-webkit-scrollbar-track{background:transparent}.cl-card-anim{animation:fadeUp .2s ease both}.cl-fade{animation:fadeIn .15s ease both}input,textarea,select{color-scheme:${_themeKey()==="light"?"light":"dark"};background-color:${C.surface}!important;color:${C.text}!important;border-color:${C.border}}input::placeholder,textarea::placeholder{color:${C.muted};opacity:1}input:focus,textarea:focus,select:focus{border-color:${C.accent}!important;outline:none}@media(max-width:768px){input,textarea,select{font-size:16px!important}.cl-hide-desk{display:none!important}button{-webkit-tap-highlight-color:transparent}}.cl-tabs-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}.cl-tabs-scroll::-webkit-scrollbar{display:none}.cl-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:600px){.cl-grid-2{grid-template-columns:1fr!important}}.cl-row-wrap{display:flex;flex-wrap:wrap;gap:8px}`}</style>
       <Sidebar page={page} setPage={setPage} session={session} onLogout={logout} onNewPost={()=>{setEditPost(null);setShowForm(true);}} unreadCount={unread} ofertasCount={ofertasCount} notifCount={notifCount} ofertasAceptadasNuevas={ofertasAceptadasNuevas} mobile={isMobile} open={sidebarOpen} onClose={()=>setSidebarOpen(false)} theme={currentTheme} onToggleTheme={toggleTheme} onForceRender={()=>forceThemeRender(n=>n+1)} esAdmin={esAdmin}/>
       {isMobile&&(
@@ -2260,9 +2266,9 @@ export default function App(){
                 {id:"cuenta",icon:"👤",label:t("account"),badge:ofertasAceptadasNuevas+ofertasCount},
               ].map(item=>(
                 <button key={item.id} onClick={()=>setPage(item.id)}
-                  style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,background:"none",border:"none",cursor:"pointer",padding:"6px 0",position:"relative",fontFamily:FONT,borderTop:`2px solid ${page===item.id?C.accent:"transparent"}`,transition:"all .15s"}}>
-                  <span style={{fontSize:20,color:page===item.id?C.accent:C.muted,lineHeight:1,transition:"color .15s"}}>{item.icon}</span>
-                  <span style={{fontSize:10,color:page===item.id?C.accent:C.muted,fontWeight:page===item.id?600:400,whiteSpace:"nowrap",transition:"color .15s"}}>{item.label}</span>
+                  style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,background:"none",border:"none",cursor:"pointer",padding:"6px 0",position:"relative",fontFamily:FONT,borderTop:`2px solid ${page===item.id?"var(--cl-section-accent)":"transparent"}`,transition:"all .15s"}}>
+                  <span style={{fontSize:20,color:page===item.id?"var(--cl-section-accent)":C.muted,lineHeight:1,transition:"color .15s"}}>{item.icon}</span>
+                  <span style={{fontSize:10,color:page===item.id?"var(--cl-section-accent)":C.muted,fontWeight:page===item.id?600:400,whiteSpace:"nowrap",transition:"color .15s"}}>{item.label}</span>
                   {item.badge>0&&<span style={{position:"absolute",top:4,right:10,background:C.danger,color:"#fff",borderRadius:10,fontSize:9,fontWeight:700,padding:"1px 4px",lineHeight:1.4}}>{item.badge>9?"9+":item.badge}</span>}
                 </button>
               ))}
@@ -2270,7 +2276,7 @@ export default function App(){
           </div>
         </>
       )}
-      <main style={{marginLeft:SW,flex:1,padding:isMobile?"62px 12px 70px":"24px 24px 24px",minHeight:"100vh",width:`calc(100vw - ${SW}px)`,maxWidth:`calc(100vw - ${SW}px)`,boxSizing:"border-box",background:C.bg}}>
+      <main style={{marginLeft:SW,flex:1,padding:isMobile?"62px 12px 70px":"24px 24px 24px",minHeight:"100vh",width:`calc(100vw - ${SW}px)`,maxWidth:`calc(100vw - ${SW}px)`,boxSizing:"border-box",background:"transparent"}}>
         <div style={{maxWidth:1100,margin:"0 auto"}}>
           {page==="explore"&&<ExplorePage session={session} onOpenChat={openChat} onOpenDetail={setDetailPost} onOpenPerfil={setPerfilEmail} onOpenCurso={setCursoPost}/>}
           {page==="agenda"&&<AgendaPage session={session} onOpenCurso={setCursoPost}/>}

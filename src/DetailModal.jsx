@@ -5,7 +5,7 @@ import {
   Avatar, Spinner, StarRating, Tag, VerifiedBadge,
   fmt, fmtRel, fmtPrice, calcAvg, calcDuracion,
   safeDisplayName, CATEGORIAS_DATA, CalendarioCurso,
-  LUD,
+  LUD, getPubTipo,
 } from "./shared";
 import { FavBtn, OfertarBtn, ShareBtn } from "./App";
 import { DescExpandible, InscribirseBtn, RelacionadasSection, ReseñasSeccion } from "./CursoPage";
@@ -45,20 +45,22 @@ function DetailModal({post,session,onClose,onChat,onOpenCurso,onOpenPerfil,onOpe
     <div style={{position:"fixed",inset:0,zIndex:200,background:C.bg,display:"flex",flexDirection:"column",fontFamily:FONT,overflowY:"auto",WebkitOverflowScrolling:"touch",animation:"fadeIn .18s ease"}}>
 
       {/* ── Barra superior ── */}
-      <div style={{position:"sticky",top:0,zIndex:10,background:C.surface,borderBottom:`1px solid ${C.border}`,padding:"0 20px",height:60,display:"flex",alignItems:"center",gap:12,boxShadow:"0 1px 8px rgba(0,0,0,.06)"}}>
+      {(()=>{const T=getPubTipo(post);return(
+      <div style={{position:"sticky",top:0,zIndex:10,background:C.surface,borderBottom:`2px solid ${T.accent}`,padding:"0 28px",height:64,display:"flex",alignItems:"center",gap:14,boxShadow:"0 1px 8px rgba(0,0,0,.06)"}}>
         <button onClick={onClose}
-          style={{width:38,height:38,borderRadius:"50%",background:C.bg,border:`1px solid ${C.border}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:C.text,flexShrink:0,transition:"background .15s",marginRight:4}}
-          onMouseEnter={e=>e.currentTarget.style.background=C.border}
-          onMouseLeave={e=>e.currentTarget.style.background=C.bg}>←</button>
+          style={{width:36,height:36,borderRadius:"50%",background:T.dim,border:`1px solid ${T.border}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:T.accent,flexShrink:0,transition:"background .15s"}}
+          onMouseEnter={e=>e.currentTarget.style.background=T.border}
+          onMouseLeave={e=>e.currentTarget.style.background=T.dim}>←</button>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontWeight:700,color:C.text,fontSize:15,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.titulo}</div>
-          <div style={{fontSize:12,color:C.muted}}>{post.materia}{post.tipo==="busqueda"?" · Búsqueda":""}</div>
+          <div style={{fontSize:12,color:C.muted,display:"flex",alignItems:"center",gap:5}}>{post.materia}{post.tipo==="busqueda"&&<span style={{color:T.accent,fontWeight:600}}>· 📣 Pedido</span>}</div>
         </div>
         <div style={{display:"flex",gap:8,flexShrink:0}}>
           <ShareBtn post={post} style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:20,padding:"6px 12px",fontSize:12}}/>
           <FavBtn post={post} session={session} onFavChange={()=>{}}/>
         </div>
       </div>
+      );})()}
 
       {/* ── Cuerpo ── */}
       <div style={{flex:1,maxWidth:900,margin:"0 auto",width:"100%",padding:"0 0 100px"}}>
