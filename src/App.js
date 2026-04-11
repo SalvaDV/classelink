@@ -39,8 +39,8 @@ function BusquedaIA({onBuscar,iaLoading,onClose}){
   const [q,setQ]=React.useState("");
   const submit=()=>{if(q.trim()){onBuscar(q.trim());onClose();}};
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:"8px",fontFamily:FONT}} onClick={onClose}>
-      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,width:"min(480px,calc(100vw - 24px))",boxShadow:"0 8px 40px rgba(0,0,0,.2)",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:"8px",fontFamily:FONT}}>
+      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,width:"min(480px,calc(100vw - 24px))",boxShadow:"0 8px 40px rgba(0,0,0,.2)",overflow:"hidden"}}>
         <div style={{padding:"20px 20px 0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div style={{fontSize:15,fontWeight:700,color:C.text}}>✨ Buscar con IA</div>
           <button onClick={onClose} style={{background:"none",border:"none",color:C.muted,fontSize:20,cursor:"pointer"}}>×</button>
@@ -1046,6 +1046,7 @@ function ContraofertaModal({oferta,miRol,session,onClose,onEnviada}){
       const miNombreContra=sb.getDisplayName(session.user.email)||session.user.email.split("@")[0];
       sb.sendEmail("contraoferta",destinatario,{
         pub_titulo:oferta.busqueda_titulo,
+        pub_id:oferta.busqueda_id,
         de_nombre:miNombreContra,
         mi_rol:miRol,
         precio_nuevo:precio,
@@ -1106,7 +1107,7 @@ function OfertasRecibidasModal({post,session,onClose,onContactar}){
         await sb.updatePublicacion(post.id,{activo:false},session.access_token).catch(()=>{});
         sb.insertNotificacion({usuario_id:null,alumno_email:o.ofertante_email,tipo:"oferta_aceptada",publicacion_id:post.id,pub_titulo:post.titulo,leida:false},session.access_token).catch(()=>{});
         // Email al docente cuya oferta fue aceptada
-        sb.sendEmail("oferta_aceptada",o.ofertante_email,{pub_titulo:post.titulo,alumno_nombre:sb.getDisplayName(session.user.email)||session.user.email.split("@")[0]},session.access_token).catch(()=>{});
+        sb.sendEmail("oferta_aceptada",o.ofertante_email,{pub_titulo:post.titulo,pub_id:post.id,alumno_nombre:sb.getDisplayName(session.user.email)||session.user.email.split("@")[0]},session.access_token).catch(()=>{});
         const ofertaActualizada={...o,estado:"aceptada",busqueda_titulo:post.titulo,busqueda_autor_email:session.user.email};
         setAcuerdoOferta(ofertaActualizada);
         await cargar();
@@ -1913,6 +1914,7 @@ export default function App(){
   // Exponer setter global para que MiCuentaPage lo llame
   window.__setAppTheme=(key)=>{applyTheme(key);forceThemeRender(n=>n+1);};
   const [showOnboarding,setShowOnboarding]=useState(false);
+  const [onboardingUpgrade,setOnboardingUpgrade]=useState(false);
   const [showAdmin,setShowAdmin]=useState(false);
   // Verificar onboarding cada vez que cambia la sesión
   // Cargar perfil completo desde DB al login — fuente de verdad
@@ -1930,13 +1932,13 @@ export default function App(){
         if(u.onboarding_completado)localStorage.setItem("cl_onboarding_done_"+email,"1");
         if(u.materias_interes?.length)localStorage.setItem("cl_materias_pref_"+email,JSON.stringify(u.materias_interes));
       }catch{}
-      // Verificar onboarding
+      // Verificar onboarding — solo mostrar si nunca fue completado ni descartado
       if(!u.onboarding_completado){
-        try{const done=localStorage.getItem("cl_onboarding_done_"+email);if(!done)setShowOnboarding(true);}catch{}
+        try{const done=localStorage.getItem("cl_onboarding_done_"+email);if(!done){setOnboardingUpgrade(false);setShowOnboarding(true);}}catch{}
       }
     }).catch(()=>{
       // Fallback a localStorage si falla la DB
-      try{const done=localStorage.getItem("cl_onboarding_done_"+email);if(!done)setShowOnboarding(true);}catch{}
+      try{const done=localStorage.getItem("cl_onboarding_done_"+email);if(!done){setOnboardingUpgrade(false);setShowOnboarding(true);}}catch{}
     });
   },[session?.user?.email]);// eslint-disable-line
   const [chatPost,setChatPost]=useState(null);const [detailPost,setDetailPost]=useState(null);
@@ -2283,7 +2285,7 @@ export default function App(){
           {page==="chats"&&<ChatsPage key={chatsKey} session={session} onOpenChat={openChat}/>}
           {page==="favoritos"&&<FavoritosPage session={session} onOpenDetail={setDetailPost} onOpenChat={openChat} onOpenPerfil={setPerfilEmail}/>}
           {page==="inscripciones"&&<InscripcionesPage session={session} onOpenCurso={setCursoPost} onOpenChat={openChat} onMarkNotifsRead={()=>{sb.marcarNotifsTipoLeidas(session.user.email,["valorar_curso","nuevo_ayudante","busqueda_acordada","nuevo_contenido"],session.access_token).then(refreshUnread).catch(()=>{});}}/>}
-          {page==="cuenta"&&<React.Suspense fallback={<div style={{padding:"48px",textAlign:"center",color:C.muted,fontFamily:FONT}}>Cargando…</div>}><MiCuentaPage key={myPostsKey} session={session} onOpenDetail={setDetailPost} onOpenCurso={setCursoPost} onEdit={p=>{setEditPost(p);setShowForm(true);}} onNew={()=>{setEditPost(null);setShowForm(true);}} onOpenChat={openChat} onRefreshOfertas={refreshUnread} onStartOnboarding={()=>setShowOnboarding(true)} onClearBadge={()=>{
+          {page==="cuenta"&&<React.Suspense fallback={<div style={{padding:"48px",textAlign:"center",color:C.muted,fontFamily:FONT}}>Cargando…</div>}><MiCuentaPage key={myPostsKey} session={session} onOpenDetail={setDetailPost} onOpenCurso={setCursoPost} onEdit={p=>{setEditPost(p);setShowForm(true);}} onNew={()=>{setEditPost(null);setShowForm(true);}} onOpenChat={openChat} onRefreshOfertas={refreshUnread} onStartOnboarding={()=>{setOnboardingUpgrade(true);setShowOnboarding(true);}} onClearBadge={()=>{
             setOfertasAceptadasNuevas(0);
             setOfertasCount(0);
             sb.marcarNotifsTipoLeidas(session.user.email,["oferta_aceptada","oferta_rechazada","contraoferta","nueva_oferta","nueva_inscripcion"],session.access_token).then(refreshUnread).catch(()=>{});
@@ -2305,7 +2307,7 @@ export default function App(){
     }
   }}/>
       </React.Suspense>}
-      {showOnboarding&&session&&<React.Suspense fallback={<div style={{position:"fixed",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.5)",zIndex:200}}><div style={{background:C.surface,borderRadius:16,padding:"32px 48px",color:C.text,fontFamily:FONT,fontSize:14}}>Cargando…</div></div>}><OnboardingModal session={session} onClose={()=>setShowOnboarding(false)} onPublicar={()=>{setPage("cuenta");setEditPost(null);setShowForm(true);}}/></React.Suspense>}
+      {showOnboarding&&session&&<React.Suspense fallback={<div style={{position:"fixed",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.5)",zIndex:200}}><div style={{background:C.surface,borderRadius:16,padding:"32px 48px",color:C.text,fontFamily:FONT,fontSize:14}}>Cargando…</div></div>}><OnboardingModal session={session} upgradeMode={onboardingUpgrade} onClose={()=>{try{localStorage.setItem("cl_onboarding_done_"+session.user.email,"dismissed");}catch{}setShowOnboarding(false);setOnboardingUpgrade(false);}} onPublicar={()=>{setPage("cuenta");setEditPost(null);setShowForm(true);}}/></React.Suspense>}
       {showAdmin&&<AdminPage session={session} onClose={()=>setShowAdmin(false)} onChatUser={(u)=>{setShowAdmin(false);openChat({autor_email:u.email,titulo:"Mensaje desde Admin",id:"admin_"+u.id});}}/>}
       <ScrollToTopBtn/>
       <ChatBotWidget/>

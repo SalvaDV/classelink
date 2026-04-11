@@ -100,8 +100,8 @@ function StreakBadge({session}){
 
       {/* Modal de detalle del streak */}
       {showModal&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:16,fontFamily:FONT}} onClick={()=>setShowModal(false)}>
-          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:20,width:"min(360px,95vw)",padding:"28px 24px"}} onClick={e=>e.stopPropagation()}>
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:16,fontFamily:FONT}}>
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:20,width:"min(360px,95vw)",padding:"28px 24px"}}>
             <div style={{textAlign:"center",marginBottom:20}}>
               <div style={{fontSize:48,marginBottom:8}}>{streak>=100?"👑":streak>=30?"🏆":streak>=14?"⚡":streak>=7?"🔥":"🌱"}</div>
               <div style={{fontSize:28,fontWeight:800,color:C.text}}>{streak} día{streak!==1?"s":" "} seguido{streak!==1?"s":""}</div>
@@ -357,7 +357,9 @@ async function dispararAlertasIA(pub, session){
 
 function PostFormModal({session,postToEdit,onClose,onSave,modoInicial}){
   const editing=!!postToEdit;
-  const [tipo,setTipo]=useState(postToEdit?.tipo||(editing?"oferta":"oferta"));const [materia,setMateria]=useState(postToEdit?.materia||"");const [titulo,setTitulo]=useState(postToEdit?.titulo||"");const [descripcion,setDescripcion]=useState(postToEdit?.descripcion||"");
+  const rolUsuario=localStorage.getItem("cl_rol_"+session.user.email)||"alumno";
+  const soloAlumno=!editing&&rolUsuario==="alumno";
+  const [tipo,setTipo]=useState(postToEdit?.tipo||(soloAlumno?"busqueda":"oferta"));const [materia,setMateria]=useState(postToEdit?.materia||"");const [titulo,setTitulo]=useState(postToEdit?.titulo||"");const [descripcion,setDescripcion]=useState(postToEdit?.descripcion||"");
   const [modo,setModo]=useState((postToEdit?.modo==="grupal"?"curso":postToEdit?.modo)||(modoInicial==="clases"?"particular":"curso"));const [precio,setPrecio]=useState(postToEdit?.precio||"");const [precioTipo,setPrecioTipo]=useState(postToEdit?.precio_tipo||"hora");
   const [tienePrueba,setTienePrueba]=useState(postToEdit?.tiene_prueba||false);const [precioPrueba,setPrecioPrueba]=useState(postToEdit?.precio_prueba||"");
   const [paquetes,setPaquetes]=useState(()=>{try{return JSON.parse(postToEdit?.paquetes||"[]");}catch{return [];}});
@@ -507,7 +509,12 @@ function PostFormModal({session,postToEdit,onClose,onSave,modoInicial}){
           <div style={{display:"flex",flexDirection:"column",gap:16}}>
             {/* Rol: ofrezco / busco */}
             <div>
-              <Label>¿Sos docente o alumno?</Label>
+              {soloAlumno
+                ?<div style={{background:"#7B5CF010",border:"1px solid #7B5CF030",borderRadius:10,padding:"10px 14px",fontSize:13,color:"#7B5CF0",display:"flex",gap:8,alignItems:"center"}}>
+                  <span>📣</span>
+                  <span>Como alumno podés publicar pedidos para encontrar docentes.</span>
+                </div>
+                :<><Label>¿Sos docente o alumno?</Label>
               <div style={{display:"flex",gap:8}}>
                 {[{v:"oferta",icon:"🎓",label:"Soy docente",sub:"Quiero publicar"},{v:"busqueda",icon:"🔍",label:"Soy alumno",sub:"Busco docente o curso"}].map(({v,icon,label,sub})=>(
                   <button key={v} onClick={()=>setTipo(v)}
@@ -518,7 +525,7 @@ function PostFormModal({session,postToEdit,onClose,onSave,modoInicial}){
                   </button>
                 ))}
               </div>
-            </div>
+            </></>}
             {/* Si es docente: elige curso o clase particular */}
             {tipo==="oferta"&&(
               <div>

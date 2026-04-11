@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import * as sb from "./supabase";
 import { C, FONT, LUD, MATERIAS, CATEGORIAS_DATA } from "./shared";
 
-function OnboardingModal({session,onClose,onPublicar}){
+function OnboardingModal({session,onClose,onPublicar,upgradeMode}){
   const [step,setStep]=useState(0);
   const [rol,setRol]=useState("");// "alumno" | "docente" | "ambos"
   const [materias,setMaterias]=useState([]);
@@ -29,14 +29,14 @@ function OnboardingModal({session,onClose,onPublicar}){
   // ── Pasos base ──────────────────────────────────────────────────────────────
   const PASOS_BASE=[
     // Paso 0: Bienvenida + rol
-    {id:"bienvenida",title:"¡Bienvenido/a a Luderis!",sub:"La plataforma educativa argentina. Contanos un poco sobre vos.",
+    {id:"bienvenida",title:upgradeMode?"Convertirte en docente":"¡Bienvenido/a a Luderis!",sub:upgradeMode?"Elegí cómo querés usar Luderis de ahora en adelante.":"La plataforma educativa argentina. Contanos un poco sobre vos.",
      canNext:!!rol,
      body:(
       <div style={{display:"flex",flexDirection:"column",gap:12,marginTop:8}}>
-        <p style={{color:C.muted,fontSize:13,lineHeight:1.7,margin:0}}>Aprendé lo que quieras, enseñá lo que sabés. ¿Cómo vas a usar Luderis?</p>
+        <p style={{color:C.muted,fontSize:13,lineHeight:1.7,margin:0}}>{upgradeMode?"Completá tu verificación para empezar a enseñar en Luderis.":"Aprendé lo que quieras, enseñá lo que sabés. ¿Cómo vas a usar Luderis?"}</p>
         <div style={{display:"grid",gap:10,marginTop:4}}>
           {[
-            {v:"alumno",icon:"🎓",title:"Quiero aprender",sub:"Busco clases, cursos y docentes"},
+            ...(!upgradeMode?[{v:"alumno",icon:"🎓",title:"Quiero aprender",sub:"Busco clases, cursos y docentes"}]:[]),
             {v:"docente",icon:"📚",title:"Quiero enseñar",sub:"Voy a publicar clases y cursos"},
             {v:"ambos",icon:"⚡",title:"Ambas cosas",sub:"Aprendo y enseño según lo que necesite"},
           ].map(({v,icon,title,sub:s})=>(

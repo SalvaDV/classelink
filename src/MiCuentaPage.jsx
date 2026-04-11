@@ -664,8 +664,8 @@ function ContraRespondedor({oferta,session,onActualizado,onVer,onChat}){
       </span>
 
       {popup&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:20,fontFamily:FONT}} onClick={cerrar}>
-          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:18,padding:"26px 28px",width:"min(420px,94vw)"}} onClick={e=>e.stopPropagation()}>
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:20,fontFamily:FONT}}>
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:18,padding:"26px 28px",width:"min(420px,94vw)"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
               <h3 style={{color:C.text,margin:0,fontSize:16,fontWeight:700}}>Oferta del alumno</h3>
               <button onClick={cerrar} style={{background:"none",border:"none",color:C.muted,fontSize:20,cursor:"pointer"}}>×</button>

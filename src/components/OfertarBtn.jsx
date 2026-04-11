@@ -38,7 +38,7 @@ export default function OfertarBtn({post,session}){
       // Notificar al dueño de la búsqueda que recibió una nueva oferta
       sb.insertNotificacion({usuario_id:null,alumno_email:post.autor_email,tipo:"nueva_oferta",publicacion_id:post.id,pub_titulo:post.titulo,leida:false},session.access_token).catch(()=>{});
       // Email al dueño de la búsqueda
-      sb.sendEmail("oferta_recibida",post.autor_email,{pub_titulo:post.titulo,docente_nombre:sb.getDisplayName(session.user.email)||session.user.email.split("@")[0],mensaje:msg},session.access_token).catch(()=>{});
+      sb.sendEmail("oferta_recibida",post.autor_email,{pub_titulo:post.titulo,pub_id:post.id,docente_nombre:sb.getDisplayName(session.user.email)||session.user.email.split("@")[0],mensaje:msg},session.access_token).catch(()=>{});
       setOk(true);
       // Actualizar estado local y cerrar el popup
       setMiOferta({busqueda_id:post.id,estado:"pendiente",created_at:new Date().toISOString()});

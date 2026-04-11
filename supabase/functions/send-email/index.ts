@@ -120,7 +120,7 @@ const TEMPLATES: Record<string, (data: any, appUrl: string) => { subject: string
       </div>
       <p>Entrá a Luderis para ver los detalles y coordinar con tu nuevo alumno.</p>
       <p style="text-align:center;margin:24px 0;">
-        <a href="${appUrl}" class="btn">Ver mis clases →</a>
+        <a href="${data.pub_id ? `${appUrl}?pub=${data.pub_id}` : `${appUrl}?page=cuenta`}" class="btn">Ver la clase →</a>
       </p>
     `, `${data.alumno_nombre} se inscribió en tu clase.`),
   }),
@@ -142,7 +142,7 @@ const TEMPLATES: Record<string, (data: any, appUrl: string) => { subject: string
       ${data.mensaje ? `<div class="info-box"><div class="label">Mensaje</div><div class="value" style="font-style:italic">"${data.mensaje}"</div></div>` : ""}
       <p>Entrá para ver la oferta completa y aceptar o rechazar.</p>
       <p style="text-align:center;margin:24px 0;">
-        <a href="${appUrl}" class="btn">Ver oferta →</a>
+        <a href="${appUrl}?page=cuenta&tab=ofertas" class="btn">Ver oferta →</a>
       </p>
     `, "Un docente respondió a tu búsqueda."),
   }),
@@ -163,7 +163,7 @@ const TEMPLATES: Record<string, (data: any, appUrl: string) => { subject: string
       </div>
       <p>El próximo paso es coordinar los detalles por el chat de Luderis.</p>
       <p style="text-align:center;margin:24px 0;">
-        <a href="${appUrl}" class="btn">Ir al chat →</a>
+        <a href="${appUrl}?page=chats" class="btn">Ir al chat →</a>
       </p>
     `, "¡Tu oferta fue aceptada!"),
   }),
@@ -218,7 +218,7 @@ const TEMPLATES: Record<string, (data: any, appUrl: string) => { subject: string
       <p><strong>${data.de_nombre}</strong> te escribió sobre <strong>${data.pub_titulo}</strong>.</p>
       ${data.preview ? `<div class="info-box"><div class="label">Mensaje</div><div class="value" style="font-style:italic">"${data.preview.slice(0,120)}${data.preview.length>120?"...":""}"</div></div>` : ""}
       <p style="text-align:center;margin:24px 0;">
-        <a href="${appUrl}" class="btn">Responder →</a>
+        <a href="${appUrl}?page=chats" class="btn">Responder →</a>
       </p>
     `, `Nuevo mensaje de ${data.de_nombre}.`),
   }),
@@ -240,7 +240,7 @@ const TEMPLATES: Record<string, (data: any, appUrl: string) => { subject: string
       ${data.modalidad ? `<div class="info-box"><div class="label">Modalidad</div><div class="value">${data.modalidad}</div></div>` : ""}
       ${data.precio ? `<div class="info-box"><div class="label">Precio acordado</div><div class="value">${data.moneda || "ARS"} ${Number(data.precio).toLocaleString("es-AR")}</div></div>` : ""}
       <p style="text-align:center;margin:24px 0;">
-        <a href="${appUrl}" class="btn">Ver mi clase →</a>
+        <a href="${data.pub_id ? `${appUrl}?pub=${data.pub_id}` : appUrl}" class="btn">Ver mi clase →</a>
       </p>
       <p style="font-size:12px;color:#A0AEC0;text-align:center;">Guardá este email como comprobante de tu inscripción.</p>
     `, "Tu inscripción fue registrada exitosamente."),
@@ -263,7 +263,7 @@ const TEMPLATES: Record<string, (data: any, appUrl: string) => { subject: string
       ${data.mensaje ? `<div class="info-box"><div class="label">Mensaje</div><div class="value" style="font-style:italic">"${data.mensaje}"</div></div>` : ""}
       <p>Entrá para aceptar, rechazar o hacer tu propia contraoferta.</p>
       <p style="text-align:center;margin:24px 0;">
-        <a href="${appUrl}" class="btn">Ver contraoferta →</a>
+        <a href="${appUrl}?page=cuenta&tab=ofertas" class="btn">Ver contraoferta →</a>
       </p>
     `, `${data.de_nombre} te hizo una contraoferta.`),
   }),
@@ -283,7 +283,7 @@ const TEMPLATES: Record<string, (data: any, appUrl: string) => { subject: string
         <div class="value">${data.tipo_eval === "diagnostico" ? "🔍 Diagnóstico" : data.tipo_eval === "checkpoint" ? "📍 Checkpoint" : "🏁 Evaluación final"}</div>
       </div>
       <p style="text-align:center;margin:24px 0;">
-        <a href="${appUrl}" class="btn">Ir a la evaluación →</a>
+        <a href="${data.pub_id ? `${appUrl}?pub=${data.pub_id}` : appUrl}" class="btn">Ir a la evaluación →</a>
       </p>
     `, "Hay una nueva evaluación disponible."),
   }),
@@ -340,7 +340,7 @@ Object.assign(TEMPLATES, {
       ${data.precio ? `<div class="info-box"><div class="label">Precio</div><div class="value">$${Number(data.precio).toLocaleString("es-AR")} ${data.moneda || "ARS"}</div></div>` : ""}
       <p>Ya podés acceder al contenido desde Luderis.</p>
       <p style="text-align:center;margin:24px 0;">
-        <a href="${appUrl}" class="btn">Ver mi inscripción →</a>
+        <a href="${data.pub_id ? `${appUrl}?pub=${data.pub_id}` : appUrl}" class="btn">Ver mi inscripción →</a>
       </p>
     `, "Tu inscripción fue confirmada."),
   }),
@@ -362,7 +362,7 @@ Object.assign(TEMPLATES, {
       ${data.mensaje ? `<div class="info-box"><div class="label">Mensaje</div><div class="value" style="font-style:italic">"${data.mensaje}"</div></div>` : ""}
       <p>Ingresá a Luderis para aceptar, rechazar o hacer tu propia contraoferta.</p>
       <p style="text-align:center;margin:24px 0;">
-        <a href="${appUrl}" class="btn">Ver la contraoferta →</a>
+        <a href="${appUrl}?page=cuenta&tab=ofertas" class="btn">Ver la contraoferta →</a>
       </p>
     `, `${data.de_nombre} te envió una contraoferta.`),
   }),
@@ -383,7 +383,7 @@ Object.assign(TEMPLATES, {
       </div>
       <p>Ingresá a Luderis para completarla antes de la fecha límite.</p>
       <p style="text-align:center;margin:24px 0;">
-        <a href="${appUrl}" class="btn">Ir a la evaluación →</a>
+        <a href="${data.pub_id ? `${appUrl}?pub=${data.pub_id}` : appUrl}" class="btn">Ir a la evaluación →</a>
       </p>
     `, "Tu docente publicó una nueva evaluación."),
   }),

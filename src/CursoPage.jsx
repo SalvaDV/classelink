@@ -334,8 +334,8 @@ function JitsiModal({roomName,displayName,onClose}){
   const [copied,setCopied]=useState(false);
   const copiar=()=>{try{navigator.clipboard.writeText(url);}catch{} setCopied(true);setTimeout(()=>setCopied(false),2000);};
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:700,display:"flex",alignItems:"center",justifyContent:"center",padding:16,fontFamily:FONT}} onClick={onClose}>
-      <div style={{background:"#12122a",borderRadius:20,width:"min(480px,96vw)",overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,.6)"}} onClick={e=>e.stopPropagation()}>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:700,display:"flex",alignItems:"center",justifyContent:"center",padding:16,fontFamily:FONT}}>
+      <div style={{background:"#12122a",borderRadius:20,width:"min(480px,96vw)",overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,.6)"}}>
         {/* Header */}
         <div style={{background:"linear-gradient(135deg,#0F3F7A,#1A6ED8)",padding:"24px 28px",position:"relative"}}>
           <button onClick={onClose} style={{position:"absolute",top:12,right:14,background:"none",border:"none",color:"rgba(255,255,255,.6)",fontSize:22,cursor:"pointer",lineHeight:1}}>×</button>
@@ -3336,6 +3336,7 @@ JSON: {"preguntas":[{"texto":"...","tipo":"reflexion"}]}`:""}`;
           if(insc.alumno_email&&insc.alumno_email!==session.user.email){
             sb.sendEmail("nueva_evaluacion",insc.alumno_email,{
               pub_titulo:evalTitulo,
+              pub_id:post.id,
               tipo_eval:evalTipo,
               curso_titulo:evalTitulo,
             },session.access_token).catch(()=>{});
@@ -4053,6 +4054,7 @@ function EvaluacionCreadorMejorado({post,session,onSaved,onCancel}){
           if(insc.alumno_email&&insc.alumno_email!==session.user.email){
             sb.sendEmail("nueva_evaluacion",insc.alumno_email,{
               pub_titulo:evalTitulo,
+              pub_id:post.id,
               tipo_eval:evalTipo,
               curso_titulo:evalTitulo,
             },session.access_token).catch(()=>{});
@@ -4384,7 +4386,7 @@ function CursoPage({post,session,onClose,onUpdatePost}){
   return(
     <div  ref={pageRef} style={{position:"fixed",inset:0,background:C.bg,zIndex:300,overflowY:"auto",fontFamily:FONT}}>
       {confirmElCP}
-      {showJitsiCurso&&<JitsiModal roomName={jitsiRoomCurso} displayName={docenteDisplayName} onClose={()=>setShowJitsiCurso(false)}/>}
+      {showJitsiCurso&&<JitsiModal roomName={jitsiRoomCurso} displayName={docenteDisplayName} onClose={()=>{setShowJitsiCurso(false);if(esMio){setClaseActiva(false);}else{setTab("contenido");}}}/>}
       {/* Banner "Clase en vivo" para alumnos */}
       {claseActiva&&!esMio&&(
         <div style={{background:"linear-gradient(135deg,#C8000015,#E0000022)",borderBottom:"1px solid #C8000033",padding:"10px 16px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
@@ -4820,7 +4822,7 @@ function StripeCheckoutBtn({post, session, onDone, onClose}){
       await sb.insertInscripcion({publicacion_id:post.id,alumno_id:session.user.id,alumno_email:session.user.email,metodo_pago:"stripe",stripe_payment_intent:paymentIntentId},session.access_token);
       sb.insertNotificacion({usuario_id:null,alumno_email:post.autor_email,tipo:"nueva_inscripcion",publicacion_id:post.id,pub_titulo:post.titulo,leida:false},session.access_token).catch(()=>{});
       const alumnoNombre=sb.getDisplayName(session.user.email)||session.user.email.split("@")[0];
-      sb.sendEmail("nueva_inscripcion",post.autor_email,{pub_titulo:post.titulo,alumno_nombre:alumnoNombre},session.access_token).catch(()=>{});
+      sb.sendEmail("nueva_inscripcion",post.autor_email,{pub_titulo:post.titulo,pub_id:post.id,alumno_nombre:alumnoNombre},session.access_token).catch(()=>{});
       toast("¡Pago exitoso! Ya tenés acceso","success",4000);
       setEstado("done");
       setTimeout(()=>{onClose();onDone();},800);
@@ -4899,7 +4901,7 @@ function InscripcionModal({post,session,onClose,onDone}){
       await sb.insertInscripcion({publicacion_id:post.id,alumno_id:session.user.id,alumno_email:session.user.email},session.access_token);
       sb.insertNotificacion({usuario_id:null,alumno_email:post.autor_email,tipo:"nueva_inscripcion",publicacion_id:post.id,pub_titulo:post.titulo,leida:false},session.access_token).catch(()=>{});
       const alumnoNombre=sb.getDisplayName(session.user.email)||session.user.email.split("@")[0];
-      sb.sendEmail("nueva_inscripcion",post.autor_email,{pub_titulo:post.titulo,alumno_nombre:alumnoNombre},session.access_token).catch(()=>{});
+      sb.sendEmail("nueva_inscripcion",post.autor_email,{pub_titulo:post.titulo,pub_id:post.id,alumno_nombre:alumnoNombre},session.access_token).catch(()=>{});
       // Info del mail según lo que eligió
       const esPruebaLocal=metodoElegido==="prueba";
       const paqueteInfo=paqueteElegido&&!esPruebaLocal?`${paqueteElegido.nombre||paqueteElegido.clases+" clases"}`:null;
@@ -4908,6 +4910,7 @@ function InscripcionModal({post,session,onClose,onDone}){
       // Email al alumno
       sb.sendEmail("comprobante_inscripcion",session.user.email,{
         pub_titulo:post.titulo,
+        pub_id:post.id,
         docente_nombre:post.autor_nombre||post.autor_email.split("@")[0],
         modalidad:post.modalidad||"",
         precio:precioMail,
@@ -4918,6 +4921,7 @@ function InscripcionModal({post,session,onClose,onDone}){
       // Email al docente
       sb.sendEmail("nueva_inscripcion",post.autor_email,{
         pub_titulo:post.titulo,
+        pub_id:post.id,
         alumno_nombre:session.user.email.split("@")[0],
         precio:precioMail,
         moneda:post.moneda||"ARS",
@@ -5005,8 +5009,8 @@ function InscripcionModal({post,session,onClose,onDone}){
   },[paquetesDisp,post.tiene_prueba,post.moneda]);
 
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px",fontFamily:FONT}} onClick={onClose}>
-      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:20,width:"min(420px,98vw)",maxHeight:"90vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px",fontFamily:FONT}}>
+      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:20,width:"min(420px,98vw)",maxHeight:"90vh",overflowY:"auto"}}>
 
         {/* Header */}
         <div style={{padding:"20px 22px 16px",borderBottom:`1px solid ${C.border}`}}>

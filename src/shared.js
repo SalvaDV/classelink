@@ -61,7 +61,7 @@ export const TIPO_PUB={
   },
   particular:{
     accent:"#E8881A",grad:"linear-gradient(135deg,#E8881A,#F5C842)",
-    heroGrad:"linear-gradient(135deg,#3D1A00 0%,#C8660A 50%,#F5C842 100%)",
+    heroGrad:"linear-gradient(135deg,#7A3500 0%,#D4700A 55%,#F5C842 100%)",
     dim:"#E8881A10",border:"#E8881A30",label:"Clase particular",emoji:"👤",bg:"#FEF6EE",
   },
   pedido:{
@@ -296,7 +296,7 @@ export function SearchableSelect({value,onChange,options,placeholder="Todas",sty
 
 export const ErrMsg=({msg})=>msg?<div style={{color:C.danger,fontSize:12,margin:"5px 0",fontFamily:FONT,display:"flex",alignItems:"center",gap:5}}><span>⚠</span>{msg}</div>:null;
 export const Label=({children})=><div style={{color:C.muted,fontSize:12,fontWeight:600,letterSpacing:.3,marginBottom:6}}>{children}</div>;
-export const Modal=({children,onClose,width="min(600px,97vw)"})=>(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:"8px 6px",fontFamily:FONT}} onClick={onClose}><div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,width,maxHeight:"96vh",overflowY:"auto",boxShadow:"0 8px 40px rgba(0,0,0,.15)",WebkitOverflowScrolling:"touch"}} onClick={e=>e.stopPropagation()}>{children}</div></div>);
+export const Modal=({children,onClose,width="min(600px,97vw)"})=>(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:"8px 6px",fontFamily:FONT}}><div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,width,maxHeight:"96vh",overflowY:"auto",boxShadow:"0 8px 40px rgba(0,0,0,.15)",WebkitOverflowScrolling:"touch"}}>{children}</div></div>);
 
 // ─── LEGAL MODAL (T&C + Privacidad) ──────────────────────────────────────────
 const LEGAL_SECTIONS=[
@@ -326,7 +326,7 @@ export function LegalModal({tab="tc",onClose}){
   const [activeTab,setActiveTab]=React.useState(tab);
   const sections=activeTab==="tc"?LEGAL_SECTIONS:PRIVACY_SECTIONS;
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:9990,display:"flex",alignItems:"center",justifyContent:"center",padding:"8px",fontFamily:FONT}} onClick={onClose}>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:9990,display:"flex",alignItems:"center",justifyContent:"center",padding:"8px",fontFamily:FONT}}>
       <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,width:"min(640px,calc(100vw - 16px))",maxHeight:"90vh",display:"flex",flexDirection:"column",overflow:"hidden",boxShadow:"0 8px 40px rgba(0,0,0,.2)"}} onClick={e=>e.stopPropagation()}>
         <div style={{padding:"18px 20px 0",borderBottom:`1px solid ${C.border}`,flexShrink:0}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
