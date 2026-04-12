@@ -358,7 +358,7 @@ async function dispararAlertasIA(pub, session){
 function PostFormModal({session,postToEdit,onClose,onSave,modoInicial}){
   const editing=!!postToEdit;
   const rolUsuario=localStorage.getItem("cl_rol_"+session.user.email)||"alumno";
-  const soloAlumno=!editing&&rolUsuario==="alumno";
+  const soloAlumno=rolUsuario==="alumno";
   const [tipo,setTipo]=useState(postToEdit?.tipo||(soloAlumno?"busqueda":"oferta"));const [materia,setMateria]=useState(postToEdit?.materia||"");const [titulo,setTitulo]=useState(postToEdit?.titulo||"");const [descripcion,setDescripcion]=useState(postToEdit?.descripcion||"");
   const [modo,setModo]=useState((postToEdit?.modo==="grupal"?"curso":postToEdit?.modo)||(modoInicial==="clases"?"particular":"curso"));const [precio,setPrecio]=useState(postToEdit?.precio||"");const [precioTipo,setPrecioTipo]=useState(postToEdit?.precio_tipo||"hora");
   const [tienePrueba,setTienePrueba]=useState(postToEdit?.tiene_prueba||false);const [precioPrueba,setPrecioPrueba]=useState(postToEdit?.precio_prueba||"");
@@ -507,27 +507,42 @@ function PostFormModal({session,postToEdit,onClose,onSave,modoInicial}){
         {/* ── PASO 1: Tipo + Formato ── */}
         {paso===1&&(
           <div style={{display:"flex",flexDirection:"column",gap:16}}>
-            {/* Rol: ofrezco / busco */}
-            <div>
-              {soloAlumno
-                ?<div style={{background:"#7B5CF010",border:"1px solid #7B5CF030",borderRadius:10,padding:"10px 14px",fontSize:13,color:"#7B5CF0",display:"flex",gap:8,alignItems:"center"}}>
-                  <span>📣</span>
-                  <span>Como alumno podés publicar pedidos para encontrar docentes.</span>
+            {/* Rol selector — solo para docentes/ambos */}
+            {!soloAlumno&&(
+              <div>
+                <Label>¿Sos docente o alumno?</Label>
+                <div style={{display:"flex",gap:8}}>
+                  {[{v:"oferta",icon:"🎓",label:"Soy docente",sub:"Quiero publicar"},{v:"busqueda",icon:"🔍",label:"Soy alumno",sub:"Busco docente o curso"}].map(({v,icon,label,sub})=>(
+                    <button key={v} onClick={()=>setTipo(v)}
+                      style={{flex:1,padding:"14px 10px",borderRadius:14,border:`2px solid ${tipo===v?C.accent:C.border}`,background:tipo===v?C.accentDim:C.bg,cursor:"pointer",fontFamily:FONT,textAlign:"center",transition:"all .15s"}}>
+                      <div style={{fontSize:28,marginBottom:6}}>{icon}</div>
+                      <div style={{fontSize:13,fontWeight:700,color:tipo===v?C.accent:C.text}}>{label}</div>
+                      <div style={{fontSize:11,color:C.muted,marginTop:2}}>{sub}</div>
+                    </button>
+                  ))}
                 </div>
-                :<><Label>¿Sos docente o alumno?</Label>
-              <div style={{display:"flex",gap:8}}>
-                {[{v:"oferta",icon:"🎓",label:"Soy docente",sub:"Quiero publicar"},{v:"busqueda",icon:"🔍",label:"Soy alumno",sub:"Busco docente o curso"}].map(({v,icon,label,sub})=>(
-                  <button key={v} onClick={()=>setTipo(v)}
-                    style={{flex:1,padding:"14px 10px",borderRadius:14,border:`2px solid ${tipo===v?C.accent:C.border}`,background:tipo===v?C.accentDim:C.bg,cursor:"pointer",fontFamily:FONT,textAlign:"center",transition:"all .15s"}}>
-                    <div style={{fontSize:28,marginBottom:6}}>{icon}</div>
-                    <div style={{fontSize:13,fontWeight:700,color:tipo===v?C.accent:C.text}}>{label}</div>
-                    <div style={{fontSize:11,color:C.muted,marginTop:2}}>{sub}</div>
-                  </button>
-                ))}
               </div>
-            </>}
-            </div>
-            {/* Si es docente: elige curso o clase particular */}
+            )}
+            {/* Tipo de publicación — cards para alumno (busqueda) o docente ofertando */}
+            {tipo==="busqueda"&&(
+              <div>
+                <Label>¿Qué estás buscando?</Label>
+                <div style={{display:"flex",gap:10}}>
+                  {[
+                    {v:"curso",icon:"📚",label:"Un curso",sub:"Contenido estructurado con múltiples clases",color:"#7B3FBE"},
+                    {v:"particular",icon:"🎯",label:"Clases particulares",sub:"Clases 1 a 1 o en grupo pequeño",color:"#7B5CF0"},
+                  ].map(({v,icon,label,sub,color})=>(
+                    <button key={v} onClick={()=>setModo(v)}
+                      style={{flex:1,padding:"16px 12px",borderRadius:16,border:`2px solid ${modo===v?color:C.border}`,background:modo===v?color+"15":C.bg,cursor:"pointer",fontFamily:FONT,textAlign:"left",transition:"all .18s",position:"relative"}}>
+                      {modo===v&&<div style={{position:"absolute",top:10,right:10,width:18,height:18,borderRadius:"50%",background:color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#fff",fontWeight:900}}>✓</div>}
+                      <div style={{fontSize:32,marginBottom:8}}>{icon}</div>
+                      <div style={{fontSize:14,fontWeight:700,color:modo===v?color:C.text,marginBottom:4}}>{label}</div>
+                      <div style={{fontSize:11,color:C.muted,lineHeight:1.4}}>{sub}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             {tipo==="oferta"&&(
               <div>
                 <Label>¿Qué querés publicar?</Label>
@@ -542,20 +557,6 @@ function PostFormModal({session,postToEdit,onClose,onSave,modoInicial}){
                       <div style={{fontSize:32,marginBottom:8}}>{icon}</div>
                       <div style={{fontSize:14,fontWeight:700,color:modo===v?color:C.text,marginBottom:4}}>{label}</div>
                       <div style={{fontSize:11,color:C.muted,lineHeight:1.4}}>{sub}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {/* Si es alumno: tipo de búsqueda */}
-            {tipo==="busqueda"&&(
-              <div style={{background:C.accentDim,borderRadius:12,padding:"12px 14px",border:`1px solid ${C.accent}33`}}>
-                <div style={{fontSize:12,color:C.accent,fontWeight:600,marginBottom:4}}>¿Qué estás buscando?</div>
-                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                  {[{v:"curso",label:"📚 Un curso"},{"v":"particular",label:"🎯 Clases particulares"},{"v":"cualquiera",label:"Cualquiera"}].map(({v,label})=>(
-                    <button key={v} onClick={()=>setModo(v==="cualquiera"?"particular":v)}
-                      style={{padding:"6px 14px",borderRadius:20,border:`1px solid ${(v==="cualquiera"?true:modo===v)?C.accent:C.border}`,background:(v==="cualquiera"?true:modo===v)?C.accent:"transparent",color:(v==="cualquiera"?true:modo===v)?"#fff":C.muted,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:FONT,transition:"all .12s"}}>
-                      {label}
                     </button>
                   ))}
                 </div>
