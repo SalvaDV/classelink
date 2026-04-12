@@ -1578,7 +1578,7 @@ function MiCuentaPage({session,onOpenDetail,onOpenCurso,onEdit,onNew,onOpenChat,
                   <Label>Foto de perfil</Label>
                   <div style={{display:"flex",gap:12,alignItems:"center",marginBottom:12}}>
                     <div style={{width:64,height:64,borderRadius:"50%",overflow:"hidden",flexShrink:0,border:`2px solid ${avatarUrl?C.accent:C.border}`,background:C.bg,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:avatarUrl?"0 2px 12px rgba(26,110,216,.2)":"none"}}>
-                      {avatarUrl&&avatarUrl.startsWith("http")
+                      {avatarUrl&&avatarUrl.startsWith("https://")
                         ?<img src={avatarUrl} alt="avatar" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>{e.target.style.display="none";}}/>
                         :<Avatar letra={nombre[0]||session.user.email[0]} size={64}/>
                       }
@@ -1693,7 +1693,7 @@ function MiCuentaPage({session,onOpenDetail,onOpenCurso,onEdit,onNew,onOpenChat,
                     const dispHasta=disponibleAhora?new Date(Date.now()+(durMap[disponibleDuracion]||4*3600000)).toISOString():null;
                     await sb.updateUsuario(uid,{
                       display_name:newName,nombre:newName,bio:bio.trim()||null,ubicacion:ubicacionPerfil.trim()||null,
-                      avatar_url:avatarUrl.trim()||null,video_presentacion:videoPresentacion.trim()||null,
+                      avatar_url:(avatarUrl.trim().startsWith("https://")?avatarUrl.trim():null),video_presentacion:videoPresentacion.trim()||null,
                       disponible_ahora:disponibleAhora,disponible_hasta:dispHasta,disponible_mensaje:disponibleAhora?disponibleMensaje.trim()||null:null,
                       titulo_profesional:tituloProfesional.trim()||null,
                       anios_experiencia:aniosExperiencia?parseInt(aniosExperiencia):null,

@@ -33,12 +33,36 @@ serve(async (req) => {
       return new Response("ok", { status: 200, headers: CORS });
     }
 
-    const MP_ACCESS_TOKEN = Deno.env.get("MP_ACCESS_TOKEN");
-    const SUPABASE_URL    = Deno.env.get("SUPABASE_URL")!;
-    const SUPABASE_KEY    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const MP_ACCESS_TOKEN  = Deno.env.get("MP_ACCESS_TOKEN");
+    const MP_WEBHOOK_SECRET = Deno.env.get("MP_WEBHOOK_SECRET"); // secret en dashboard de MP
+    const SUPABASE_URL     = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_KEY     = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     if (!MP_ACCESS_TOKEN || !SUPABASE_URL || !SUPABASE_KEY) {
       throw new Error("Variables de entorno faltantes");
+    }
+
+    // ── Validar firma de Mercado Pago (x-signature) ────────────────────────
+    if (MP_WEBHOOK_SECRET) {
+      const xSignature = req.headers.get("x-signature");
+      const xRequestId = req.headers.get("x-request-id");
+      if (!xSignature || !xRequestId) {
+        return new Response("Unauthorized", { status: 401, headers: CORS });
+      }
+      // MP envía: ts=TIMESTAMP,v1=HASH
+      const parts = Object.fromEntries(xSignature.split(",").map(p => p.split("=")));
+      const ts = parts["ts"]; const hash = parts["v1"];
+      const manifest = `id:${id ?? ""};request-id:${xRequestId};ts:${ts};`;
+      const encoder = new TextEncoder();
+      const key = await crypto.subtle.importKey(
+        "raw", encoder.encode(MP_WEBHOOK_SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+      );
+      const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(manifest));
+      const expected = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2,"0")).join("");
+      if (hash !== expected) {
+        console.warn("mp-webhook: firma inválida, rechazando request");
+        return new Response("Invalid signature", { status: 401, headers: CORS });
+      }
     }
 
     // ── Obtener detalle del pago desde MP ────────────────────────────────

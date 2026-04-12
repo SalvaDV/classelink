@@ -476,6 +476,7 @@ function ChatCurso({post,session,ayudantes=[],ayudanteEmails=[],onNewMessages,es
 
   const handleImageSelect=(e)=>{
     const file=e.target.files?.[0];if(!file)return;
+    if(!["image/jpeg","image/png","image/webp","image/gif"].includes(file.type)){alert("Solo se permiten imágenes (JPG, PNG, WebP, GIF)");e.target.value="";return;}
     if(file.size>4*1024*1024){alert("La imagen no puede superar 4MB");return;}
     const reader=new FileReader();
     reader.onload=(ev)=>setImagenPrevia(ev.target.result);
@@ -1094,7 +1095,9 @@ function QuizViewer({item,session,esMio,esAyudante,onReabrir}){
     }catch(e){alert(e.message);}finally{setEnviando(false);}
   };
 
+  const ALLOWED_ENTREGA_TYPES=["application/pdf","application/msword","application/vnd.openxmlformats-officedocument.wordprocessingml.document","text/plain","image/jpeg","image/png","application/zip","application/x-zip-compressed"];
   const leerArchivo=(file)=>new Promise((res,rej)=>{
+    if(!ALLOWED_ENTREGA_TYPES.includes(file.type)){rej(new Error("Tipo de archivo no permitido. Usá PDF, DOC, TXT, imagen o ZIP."));return;}
     if(file.size>5*1024*1024){rej(new Error("El archivo no puede superar 5MB"));return;}
     const r=new FileReader();r.onload=e=>res({name:file.name,size:file.size,base64:e.target.result});r.onerror=rej;r.readAsDataURL(file);
   });
