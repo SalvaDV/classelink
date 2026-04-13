@@ -45,10 +45,20 @@ function DetailModal({post,session,onClose,onChat,onOpenCurso,onOpenPerfil,onOpe
 
   return(
     <div style={{position:"fixed",inset:0,zIndex:200,background:C.bg,display:"flex",flexDirection:"column",fontFamily:FONT,overflowY:"auto",WebkitOverflowScrolling:"touch",animation:"fadeIn .18s ease"}}>
+      <style>{`
+        @media(max-width:600px){
+          .dm-topbar{padding:0 14px!important}
+          .dm-banner{padding:0 16px!important;height:110px!important}
+          .dm-banner-emoji{font-size:44px!important}
+          .dm-body-pad{padding:0 12px!important}
+          .dm-main-layout{gap:16px!important}
+          .dm-sidebar{flex:1 1 100%!important;min-width:0!important}
+        }
+      `}</style>
 
       {/* ── Barra superior ── */}
       {(()=>{const T=getPubTipo(post);return(
-      <div style={{position:"sticky",top:0,zIndex:10,background:C.surface,borderBottom:`2px solid ${T.accent}`,padding:"0 28px",height:64,display:"flex",alignItems:"center",gap:14,boxShadow:"0 1px 8px rgba(0,0,0,.06)"}}>
+      <div className="dm-topbar" style={{position:"sticky",top:0,zIndex:10,background:C.surface,borderBottom:`2px solid ${T.accent}`,padding:"0 28px",height:64,display:"flex",alignItems:"center",gap:14,boxShadow:"0 1px 8px rgba(0,0,0,.06)"}}>
         <button onClick={onClose}
           style={{width:36,height:36,borderRadius:"50%",background:T.dim,border:`1px solid ${T.border}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:T.accent,flexShrink:0,transition:"background .15s"}}
           onMouseEnter={e=>e.currentTarget.style.background=T.border}
@@ -69,10 +79,10 @@ function DetailModal({post,session,onClose,onChat,onOpenCurso,onOpenPerfil,onOpe
 
         {/* ── Banner visual de categoría ── */}
         {(()=>{const catData=CATEGORIAS_DATA[post.materia]||{emoji:"📚",grad:`linear-gradient(135deg,${LUD.dark},${LUD.blue})`};return(
-          <div style={{height:140,background:catData.grad,display:"flex",alignItems:"center",padding:"0 28px",gap:20,position:"relative",overflow:"hidden",marginBottom:0}}>
+          <div className="dm-banner" style={{height:140,background:catData.grad,display:"flex",alignItems:"center",padding:"0 28px",gap:20,position:"relative",overflow:"hidden",marginBottom:0}}>
             <div style={{position:"absolute",width:200,height:200,borderRadius:"50%",background:"rgba(255,255,255,.06)",top:-60,right:-40,pointerEvents:"none"}}/>
             <div style={{position:"absolute",width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,.04)",bottom:-40,left:60,pointerEvents:"none"}}/>
-            <span style={{fontSize:64,filter:"drop-shadow(0 4px 12px rgba(0,0,0,.25))",position:"relative",zIndex:1,lineHeight:1}}>{catData.emoji}</span>
+            <span className="dm-banner-emoji" style={{fontSize:64,filter:"drop-shadow(0 4px 12px rgba(0,0,0,.25))",position:"relative",zIndex:1,lineHeight:1}}>{catData.emoji}</span>
             <div style={{position:"relative",zIndex:1,flex:1,minWidth:0}}>
               <div style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,.7)",letterSpacing:1,marginBottom:6,textTransform:"uppercase"}}>{post.materia}</div>
               <h1 style={{color:"#fff",fontSize:"clamp(18px,3.5vw,26px)",fontWeight:800,margin:0,lineHeight:1.2,letterSpacing:"-.3px",textShadow:"0 2px 8px rgba(0,0,0,.2)",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{post.titulo}</h1>
@@ -93,7 +103,7 @@ function DetailModal({post,session,onClose,onChat,onOpenCurso,onOpenPerfil,onOpe
         </div>
 
         {/* ── Layout principal: contenido izquierdo + caja flotante derecha ── */}
-        <div style={{display:"flex",gap:32,alignItems:"flex-start",padding:"0 20px",flexWrap:"wrap"}}>
+        <div className="dm-main-layout dm-body-pad" style={{display:"flex",gap:32,alignItems:"flex-start",padding:"0 20px",flexWrap:"wrap"}}>
 
           {/* ─ Columna izquierda ─ */}
           <div style={{flex:"1 1 340px",minWidth:0}}>
@@ -167,7 +177,7 @@ function DetailModal({post,session,onClose,onChat,onOpenCurso,onOpenPerfil,onOpe
           </div>
 
           {/* ─ Caja flotante derecha ─ */}
-          <div style={{flex:"0 0 300px",minWidth:260}}>
+          <div className="dm-sidebar" style={{flex:"0 0 300px",minWidth:260}}>
             <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,padding:"24px",boxShadow:"0 4px 24px rgba(0,0,0,.08)"}}>
 
               {/* Precio */}
