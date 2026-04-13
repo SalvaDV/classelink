@@ -9,7 +9,7 @@ export const THEMES={
 export let _themeKey=()=>{try{return localStorage.getItem("cl_theme")||"light";}catch{return "light";}};
 export const C={...THEMES[_themeKey()]};
 export function applyTheme(key){Object.assign(C,THEMES[key]||THEMES.dark);try{localStorage.setItem("cl_theme",key);}catch{}}
-export const FONT="-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif";
+export const FONT="'Inter',system-ui,-apple-system,'Segoe UI',sans-serif";
 
 // ─── TOAST GLOBAL ─────────────────────────────────────────────────────────────
 let _toastCb=null;
@@ -201,20 +201,20 @@ export const Avatar=({letra,size=38,img})=>{
   return<div title={typeof letra==='string'&&letra.length>1?letra:undefined} style={{width:size,height:size,borderRadius:"50%",background:`linear-gradient(135deg,${from},${to})`,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:size*0.38,flexShrink:0,boxShadow:"0 2px 8px rgba(0,0,0,.15)",letterSpacing:"-.5px"}}>{(letra||"?").toUpperCase()}</div>;
 };
 
-export const Tag=({tipo})=>(<span style={{fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:20,background:tipo==="oferta"?C.accentDim:TIPO_PUB.pedido.dim,color:tipo==="oferta"?C.accent:TIPO_PUB.pedido.accent,border:`1px solid ${tipo==="oferta"?C.accent+"50":TIPO_PUB.pedido.border}`,fontFamily:FONT,letterSpacing:.2,display:"inline-flex",alignItems:"center",gap:4}}>{tipo==="oferta"?<>🎓 Clase</>:<>📣 Pedido</>}</span>);
+export const Tag=({tipo})=>(<span style={{fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:20,background:tipo==="oferta"?C.accentDim:TIPO_PUB.pedido.dim,color:tipo==="oferta"?C.accent:TIPO_PUB.pedido.accent,border:`1px solid ${tipo==="oferta"?C.accent+"50":TIPO_PUB.pedido.border}`,fontFamily:FONT,letterSpacing:.2,display:"inline-flex",alignItems:"center",gap:4}}>{tipo==="oferta"?<>🎓 Clase</>:<>📣 Pedido</>}</span>);
 
 export const StatusBadge=({activo,finalizado,pendiente})=>{
-  if(finalizado)return<span style={{fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:20,background:"#4A5568",color:"#E2E8F0",letterSpacing:.2}}>Finalizado</span>;
-  if(pendiente)return<span style={{fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:20,background:"#F59E0B15",color:"#B45309",border:"1px solid #F59E0B40",letterSpacing:.2}}>⏳ Pendiente</span>;
-  if(activo)return<span style={{fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:20,background:"#2EC4A015",color:"#2EC4A0",border:"1px solid #2EC4A040",letterSpacing:.2}}>● Activa</span>;
-  return<span style={{fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:20,background:"#71809615",color:"#718096",border:"1px solid #71809640",letterSpacing:.2}}>Pausada</span>;
+  if(finalizado)return<span style={{fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:20,background:"#4A5568",color:"#E2E8F0",letterSpacing:.2}}>Finalizado</span>;
+  if(pendiente)return<span style={{fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:20,background:"#F59E0B15",color:"#B45309",border:"1px solid #F59E0B40",letterSpacing:.2}}>⏳ Pendiente</span>;
+  if(activo)return<span style={{fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:20,background:"#2EC4A015",color:"#2EC4A0",border:"1px solid #2EC4A040",letterSpacing:.2}}>● Activa</span>;
+  return<span style={{fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:20,background:"#71809615",color:"#718096",border:"1px solid #71809640",letterSpacing:.2}}>Pausada</span>;
 };
 
-export const VerifiedBadge=()=>(<span style={{fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:20,background:"linear-gradient(135deg,#1A6ED812,#2EC4A012)",color:C.info,border:`1px solid ${C.info}40`,fontFamily:FONT,display:"inline-flex",alignItems:"center",gap:3}}><span style={{fontSize:10}}>✓</span> Verificado</span>);
+export const VerifiedBadge=()=>(<span style={{fontSize:12,fontWeight:700,padding:"3px 9px",borderRadius:20,background:"linear-gradient(135deg,#1A6ED812,#2EC4A012)",color:C.info,border:`1px solid ${C.info}40`,fontFamily:FONT,display:"inline-flex",alignItems:"center",gap:3}}><span style={{fontSize:11}}>✓</span> Verificado</span>);
 
-export const StarRating=({val,count,small})=>{if(!count&&!val)return <span style={{color:C.muted,fontSize:small?11:12,fontStyle:"italic"}}>Sin valoraciones</span>;const v=parseFloat(val)||0;const full=Math.round(v);return<span style={{display:"inline-flex",alignItems:"center",gap:3}}><span style={{color:"#F59E0B",fontSize:small?13:14,letterSpacing:1}}>{"★".repeat(full)}<span style={{color:C.border}}>{"★".repeat(5-full)}</span></span><span style={{color:"#B45309",fontWeight:700,fontSize:small?11:13,marginLeft:2}}>{v.toFixed(1)}</span>{count!==undefined&&<span style={{color:C.muted,fontSize:small?10:11}}>({count})</span>}</span>;};
+export const StarRating=({val,count,small})=>{if(!count&&!val)return <span style={{color:C.muted,fontSize:small?12:13,fontStyle:"italic"}}>Sin valoraciones</span>;const v=parseFloat(val)||0;const full=Math.round(v);return<span style={{display:"inline-flex",alignItems:"center",gap:3}}><span style={{color:"#F59E0B",fontSize:small?13:15,letterSpacing:1}}>{"★".repeat(full)}<span style={{color:C.border}}>{"★".repeat(5-full)}</span></span><span style={{color:"#B45309",fontWeight:700,fontSize:small?12:13,marginLeft:2}}>{v.toFixed(1)}</span>{count!==undefined&&<span style={{color:C.muted,fontSize:small?11:12}}>({count})</span>}</span>;};
 
-export const Input=({style={},...props})=>(<input style={{width:"100%",background:C.surface,border:`1px solid ${C.border}`,borderRadius:6,padding:"10px 13px",color:C.text,fontSize:14,outline:"none",boxSizing:"border-box",fontFamily:FONT,transition:"border-color .15s",...style}}
+export const Input=({style={},...props})=>(<input style={{width:"100%",background:C.surface,border:`1px solid ${C.border}`,borderRadius:6,padding:"10px 13px",color:C.text,fontSize:15,outline:"none",boxSizing:"border-box",fontFamily:FONT,transition:"border-color .15s",...style}}
   onFocus={e=>{e.target.style.borderColor=C.accent;e.target.style.boxShadow=`0 0 0 1px ${C.accent}`;}}
   onBlur={e=>{e.target.style.borderColor=C.border;e.target.style.boxShadow="none";}}
   {...props}/>);
@@ -230,7 +230,7 @@ export const Btn=({children,variant="primary",style={},...props})=>{
     outline:{bg:"transparent",color:C.accent,border:`1px solid ${C.accent}`},
   };
   const s=styles[variant]||styles.primary;
-  return(<button style={{background:s.bg,color:s.color,border:s.border,borderRadius:20,padding:"8px 20px",fontWeight:600,fontSize:14,cursor:"pointer",fontFamily:FONT,transition:"all .15s",...style}}
+  return(<button style={{background:s.bg,color:s.color,border:s.border,borderRadius:20,padding:"9px 22px",fontWeight:600,fontSize:15,cursor:"pointer",fontFamily:FONT,transition:"all .15s",...style}}
     onMouseEnter={e=>{e.currentTarget.style.opacity=".88";e.currentTarget.style.transform="scale(1.01)";}}
     onMouseLeave={e=>{e.currentTarget.style.opacity="1";e.currentTarget.style.transform="scale(1)";}}
     {...props}>{children}</button>);
@@ -294,8 +294,8 @@ export function SearchableSelect({value,onChange,options,placeholder="Todas",sty
   );
 }
 
-export const ErrMsg=({msg})=>msg?<div style={{color:C.danger,fontSize:12,margin:"5px 0",fontFamily:FONT,display:"flex",alignItems:"center",gap:5}}><span>⚠</span>{msg}</div>:null;
-export const Label=({children})=><div style={{color:C.muted,fontSize:12,fontWeight:600,letterSpacing:.3,marginBottom:6}}>{children}</div>;
+export const ErrMsg=({msg})=>msg?<div style={{color:C.danger,fontSize:13,margin:"5px 0",fontFamily:FONT,display:"flex",alignItems:"center",gap:5}}><span>⚠</span>{msg}</div>:null;
+export const Label=({children})=><div style={{color:C.muted,fontSize:13,fontWeight:600,letterSpacing:.3,marginBottom:6}}>{children}</div>;
 export const Modal=({children,onClose,width="min(600px,97vw)"})=>(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:"8px 6px",fontFamily:FONT}}><div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,width,maxHeight:"96vh",overflowY:"auto",boxShadow:"0 8px 40px rgba(0,0,0,.15)",WebkitOverflowScrolling:"touch"}}>{children}</div></div>);
 
 // ─── LEGAL MODAL (T&C + Privacidad) ──────────────────────────────────────────
