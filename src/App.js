@@ -792,11 +792,11 @@ function ExplorePage({session,onOpenChat,onOpenDetail,onOpenPerfil,onOpenCurso})
                 onMouseLeave={e=>e.currentTarget.style.background=C.bg}>←</button>
               {/* Buscador principal — trigger del modal */}
               <button onClick={()=>setShowBusquedaIA(true)}
-                style={{flex:1,display:"flex",alignItems:"center",gap:10,background:C.bg,border:`2px solid ${iaQuery?C.accent:C.border}`,borderRadius:10,padding:"11px 16px",cursor:"pointer",fontFamily:FONT,textAlign:"left",transition:"border-color .15s"}}
+                style={{flex:1,minWidth:0,display:"flex",alignItems:"center",gap:6,background:C.bg,border:`2px solid ${iaQuery?C.accent:C.border}`,borderRadius:10,padding:"10px 12px",cursor:"pointer",fontFamily:FONT,textAlign:"left",transition:"border-color .15s"}}
                 onMouseEnter={e=>e.currentTarget.style.borderColor=C.accent}
                 onMouseLeave={e=>e.currentTarget.style.borderColor=iaQuery?C.accent:C.border}>
-                <span style={{fontSize:15,background:"linear-gradient(135deg,#7B3FBE,#1A6ED8)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:700}}>✦</span>
-                <span style={{color:iaQuery?C.text:C.muted,fontSize:14,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                {!iaQuery&&<span style={{fontSize:13,background:"linear-gradient(135deg,#7B3FBE,#1A6ED8)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:700,flexShrink:0}}>✦</span>}
+                <span style={{color:iaQuery?C.text:C.muted,fontSize:13,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                   {iaQuery?iaQuery:seccion==="pedidos"?"Describí qué sabés enseñar…":"Describí lo que querés aprender…"}
                 </span>
                 {iaQuery&&<span onClick={e=>{e.stopPropagation();setIaQuery("");setIaResults(null);setIaExplanation("");setPagina(1);}} style={{color:C.muted,fontSize:16,lineHeight:1,flexShrink:0}}>×</span>}
@@ -830,7 +830,7 @@ function ExplorePage({session,onOpenChat,onOpenDetail,onOpenPerfil,onOpenCurso})
             <div style={{display:"flex",alignItems:"center",gap:6,overflow:"hidden"}}>
               <span style={{fontSize:12,color:C.muted,whiteSpace:"nowrap",flexShrink:0}}>Ordenar</span>
               <select value={ordenamiento} onChange={e=>{setOrdenamiento(e.target.value);setPagina(1);}}
-                style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:8,padding:"4px 6px",color:C.text,fontSize:13,outline:"none",cursor:"pointer",fontFamily:FONT,colorScheme:localStorage.getItem("cl_theme")||"light",minWidth:0,flex:1,maxWidth:160}}>
+                style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:8,padding:"3px 5px",color:C.text,fontSize:12,outline:"none",cursor:"pointer",fontFamily:FONT,colorScheme:localStorage.getItem("cl_theme")||"light",minWidth:0,flex:1,maxWidth:150}}>
                 <option value="relevancia">Relevancia</option>
                 <option value="recientes">Recientes</option>
                 <option value="rating">Calificados</option>
@@ -1831,7 +1831,7 @@ function ScrollToTopBtn(){
 }
 
 function ChatBotWidget(){
-  const [open,setOpen]=useState(false);const [msgs,setMsgs]=useState([{from:"bot",text:"¡Hola! 👋 Soy el asistente de ClasseLink. ¿En qué puedo ayudarte?"}]);
+  const [open,setOpen]=useState(false);const [msgs,setMsgs]=useState([{from:"bot",text:"¡Hola! Soy Ludy 🦊, la asistente virtual de Luderis. Estoy acá para ayudarte a encontrar clases, publicar contenido y resolver cualquier duda sobre la plataforma. ¿En qué te puedo ayudar?"}]);
   const [input,setInput]=useState("");const [loading,setLoading]=useState(false);
   const endRef=useRef(null);
   useEffect(()=>{if(open)endRef.current?.scrollIntoView({behavior:"smooth"});},[msgs,open]);
@@ -1850,7 +1850,7 @@ function ChatBotWidget(){
     {q:"¿Cómo funciona el chat grupal?",a:"Cada curso tiene un chat grupal visible para todos los inscriptos y el docente. Aparece dentro de la página del curso, abajo del contenido. El docente puede designar ayudantes que también tienen acceso especial.",tags:["grupal","grupo","chat curso","todos","ayudante"]},
     {q:"¿Cómo cierro las inscripciones?",a:"Desde la página de tu curso (Mi cuenta → Contenido), usá el botón naranja 'Cerrar inscripciones' en la barra superior. Los alumnos ya inscriptos mantienen su acceso.",tags:["cerrar inscripciones","cupo","no más inscrib"]},
     {q:"¿Cómo agrego a un ayudante?",a:"Dentro de la página del curso, en el panel 'Alumnos', hay una sección 'Ayudantes'. Ingresá el ID del usuario (lo encuentra en su Mi cuenta → Editar perfil) y agregalo. Tendrá acceso de edición y color especial en el chat.",tags:["ayudante","asistente","colaborad","agregar ayud"]},
-    {q:"¿Hay costo por usar ClasseLink?",a:"ClasseLink es gratuito para alumnos y docentes. El precio lo fija cada docente en su publicación y lo arreglan directamente.",tags:["costo","gratis","precio","pago","cobro","cuánto"]},
+    {q:"¿Hay costo por usar Luderis?",a:"Luderis es gratuito para alumnos y docentes. El precio lo fija cada docente en su publicación y lo arreglan directamente.",tags:["costo","gratis","precio","pago","cobro","cuánto"]},
   ];
   // Matching mejorado: busca por tags y keywords
   const matchFaq=(q)=>{
@@ -1888,7 +1888,7 @@ function ChatBotWidget(){
     if(faq){setTimeout(()=>{setMsgs(prev=>[...prev,{from:"bot",text:faq.a}]);setLoading(false);},600);return;}
     // Use AI
     try{
-      const SYSTEM_CHATBOT=`Sos el asistente de soporte de ClasseLink, una plataforma educativa argentina que conecta docentes y estudiantes.\n\nFUNCIONES PRINCIPALES:\n- Explorar: ver publicaciones de clases y búsquedas. Botón ✦ IA para búsqueda inteligente.\n- Publicar: botón "+ Publicar". Elegís "Busco clases" o "Ofrezco clases". Los docentes se verifican respondiendo una pregunta de IA sobre su tema.\n- Inscripción: abrís una publicación → Ver curso → Inscribirme.\n- Chat: disponible si estás inscripto o si el docente aceptó tu oferta.\n- Favoritos: botón ★ en cada publicación.\n- Ofertas: en búsquedas podés ofertar tus clases con precio y mensaje.\n- Quiz/Exámenes: en la página del curso, tab "Exámenes". Multiple choice (nota automática) o Entregable (corregido por docente).\n- Notas: tab "Notas" en el curso. Los alumnos ven sus notas, docentes ven tabla completa.\n- Verificación: los docentes suman badge ✓ respondiendo una pregunta de IA al publicar.\n- Mi cuenta: gestionar publicaciones, ver estadísticas, editar perfil y bio.\n- Modo oscuro/claro: Mi cuenta → Editar perfil → botones Tema.\n\nRespondé en español, de forma breve y amable. Si no podés resolver el problema en 2 intentos, sugerí contactar al soporte por WhatsApp.`;
+      const SYSTEM_CHATBOT=`Sos Ludy, la asistente virtual de Luderis, una plataforma educativa argentina que conecta docentes y estudiantes. Respondé como Ludy — amable, breve y clara.\n\nFUNCIONES PRINCIPALES:\n- Explorar: ver publicaciones de clases y búsquedas. Botón ✦ IA para búsqueda inteligente.\n- Publicar: botón "+ Publicar". Elegís "Busco clases" o "Ofrezco clases". Los docentes se verifican respondiendo una pregunta de IA sobre su tema.\n- Inscripción: abrís una publicación → Ver curso → Inscribirme.\n- Chat: disponible si estás inscripto o si el docente aceptó tu oferta.\n- Favoritos: botón ★ en cada publicación.\n- Ofertas: en búsquedas podés ofertar tus clases con precio y mensaje.\n- Quiz/Exámenes: en la página del curso, tab "Exámenes". Multiple choice (nota automática) o Entregable (corregido por docente).\n- Notas: tab "Notas" en el curso. Los alumnos ven sus notas, docentes ven tabla completa.\n- Verificación: los docentes suman badge ✓ respondiendo una pregunta de IA al publicar.\n- Mi cuenta: gestionar publicaciones, ver estadísticas, editar perfil y bio.\n- Modo oscuro/claro: Mi cuenta → Editar perfil → botones Tema.\n\nRespondé en español, de forma breve y amable. Si no podés resolver el problema en 2 intentos, sugerí contactar al soporte por WhatsApp.`;
       const text=await sb.callIA(SYSTEM_CHATBOT,q,350,"").catch(()=>"Lo siento, el asistente no está disponible en este momento.");
       // Mostrar siempre la opción de contacto humano junto a la respuesta de IA
       setMsgs(prev=>[...prev,{from:"bot",text:text},{from:"bot",text:"¿Necesitás ayuda de una persona?",action:true}]);
@@ -1896,18 +1896,18 @@ function ChatBotWidget(){
       setMsgs(prev=>[...prev,{from:"bot",text:"Lo siento, no pude procesar tu consulta en este momento."},{from:"bot",text:"Podés hablar con un representante:",action:true}]);
     }finally{setLoading(false);}
   };
-  const openWhatsApp=()=>window.open("https://wa.me/5492345459787?text=Hola,%20necesito%20ayuda%20con%20ClasseLink","_blank","noopener,noreferrer");
+  const openWhatsApp=()=>window.open("https://wa.me/5492345459787?text=Hola,%20necesito%20ayuda%20con%20Luderis","_blank","noopener,noreferrer");
   return(
     <div style={{position:"fixed",bottom:22,right:22,zIndex:500,fontFamily:FONT}} className="cl-chatbot-fab">
-      <style>{`.cl-chatbot-fab{bottom:22px!important;right:22px!important}@media(max-width:768px){.cl-chatbot-fab{bottom:74px!important;left:14px!important;right:auto!important}}`}</style>
+      <style>{`.cl-chatbot-fab{bottom:22px!important;right:22px!important}@media(max-width:768px){.cl-chatbot-fab{bottom:74px!important;right:14px!important}}`}</style>
       {open&&(
         <div style={{position:"absolute",bottom:64,right:0,width:"min(340px,88vw)",background:C.surface,border:`1px solid ${C.border}`,borderRadius:20,boxShadow:"0 8px 32px #0008",display:"flex",flexDirection:"column",maxHeight:460,overflow:"hidden"}}>
           {/* Header */}
           <div style={{background:"var(--cl-section-accent)",borderRadius:"20px 20px 0 0",padding:"14px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <div style={{display:"flex",alignItems:"center",gap:9}}>
-              <span style={{fontSize:20}}>🎓</span>
+              <span style={{fontSize:20}}>🦊</span>
               <div>
-              <div style={{fontWeight:700,color:"#fff",fontSize:13}}>Soporte Luderis</div>
+              <div style={{fontWeight:700,color:"#fff",fontSize:13}}>Ludy · Asistente de Luderis</div>
               <div style={{fontSize:11,color:"rgba(255,255,255,.7)",display:"flex",alignItems:"center",gap:4}}>
                 <span style={{width:6,height:6,borderRadius:"50%",background:"#2EC4A0",display:"inline-block",animation:"pulse 2s infinite"}}/>
                 En línea · Responde al instante
