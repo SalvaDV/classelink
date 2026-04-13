@@ -12,6 +12,9 @@ import {
 import { MyPostCard, OfertasRecibidasModal } from "./App";
 import { StreakBadge } from "./PostFormModal";
 
+// Sanitiza URLs para evitar javascript: protocol XSS
+const safeUrl=(url)=>{if(!url)return null;const u=String(url).trim();return(/^https?:\/\//i.test(u))?u:null;};
+
 function MiniLineChart({data,color,height=40,width=200}){
   if(!data||data.length<2)return<div style={{color:C.muted,fontSize:11,textAlign:"center",padding:"12px 0"}}>Sin datos suficientes</div>;
   const max=Math.max(...data.map(d=>d.v),1);
@@ -418,8 +421,12 @@ function EspacioClaseModal({oferta,session,onClose}){
   const chatPubId=oferta.busqueda_id||oferta.id;
   useEffect(()=>{
     if(pageRef.current)pageRef.current.scrollTop=0;
+    let mounted=true;
     sb.getContenido(oferta.id,session.access_token)
-      .then(r=>setContenido(r||[])).catch(()=>{}).finally(()=>setLoading(false));
+      .then(r=>{if(mounted)setContenido(r||[]);})
+      .catch(()=>{})
+      .finally(()=>{if(mounted)setLoading(false);});
+    return()=>{mounted=false;};
   },[oferta.id,session.access_token]);// eslint-disable-line
   const addC=async()=>{
     if(!nuevoTitulo.trim())return;setSavingC(true);
@@ -490,7 +497,7 @@ function EspacioClaseModal({oferta,session,onClose}){
                       {item.tipo==="texto"&&item.texto&&<p style={{color:C.muted,fontSize:12,margin:0,lineHeight:1.6}}>{item.texto}</p>}
                       {item.tipo==="aviso"&&item.texto&&<p style={{color:C.accent,fontSize:12,margin:0,background:C.accentDim,borderRadius:7,padding:"6px 9px"}}>{item.texto}</p>}
                       {item.tipo==="tarea"&&item.texto&&<p style={{color:C.purple,fontSize:12,margin:0,background:"#C85CE015",borderRadius:7,padding:"6px 9px"}}>{item.texto}</p>}
-                      {(item.tipo==="video"||item.tipo==="link"||item.tipo==="archivo")&&item.url&&<a href={item.url} target="_blank" rel="noreferrer" style={{color:C.info,fontSize:12,textDecoration:"none"}}>{item.tipo==="video"?"▶ Ver":item.tipo==="archivo"?"↓ Abrir":"↗ Link"}</a>}
+                      {(item.tipo==="video"||item.tipo==="link"||item.tipo==="archivo")&&safeUrl(item.url)&&<a href={safeUrl(item.url)} target="_blank" rel="noopener noreferrer" style={{color:C.info,fontSize:12,textDecoration:"none"}}>{item.tipo==="video"?"▶ Ver":item.tipo==="archivo"?"↓ Abrir":"↗ Link"}</a>}
                     </div>
                     {soyDocente&&<button onClick={()=>removeC(item.id)} style={{background:"none",border:"none",color:C.danger,fontSize:16,cursor:"pointer",flexShrink:0,lineHeight:1}}>×</button>}
                   </div>
@@ -515,7 +522,13 @@ function EspacioChat({pubId,miEmail,miId,otroEmail,otroNombre,session}){
   const cargar=useCallback(async()=>{
     try{const all=await sb.getMensajes(pubId,miEmail,otroEmail,session.access_token);setMsgs(all||[]);await sb.marcarLeidos(pubId,miEmail,session.access_token);}catch{}finally{setLoading(false);}
   },[pubId,miEmail,otroEmail,session.access_token]);// eslint-disable-line
-  useEffect(()=>{cargar();const t=setInterval(cargar,6000);return()=>clearInterval(t);},[cargar]);
+  useEffect(()=>{
+    let mounted=true;
+    const safeCargar=async()=>{if(mounted)await cargar();};
+    safeCargar();
+    const t=setInterval(safeCargar,6000);
+    return()=>{mounted=false;clearInterval(t);};
+  },[cargar]);
   useEffect(()=>{if(bottomRef.current)bottomRef.current.scrollIntoView({behavior:"smooth"});},[msgs]);
   const enviar=async()=>{
     if(!texto.trim())return;setSending(true);const txt=texto.trim();setTexto("");
@@ -1968,7 +1981,7 @@ function MiCuentaPage({session,onOpenDetail,onOpenCurso,onEdit,onNew,onOpenChat,
                   {d.año&&<div style={{color:C.muted,fontSize:11,marginTop:2}}>{d.año}</div>}
                   {d.pais&&<div style={{color:C.muted,fontSize:11,marginTop:2}}>🌎 {d.pais}</div>}
                   {d.descripcion&&<div style={{color:C.muted,fontSize:12,marginTop:6,lineHeight:1.5}}>{d.descripcion}</div>}
-                  {d.url_verificacion&&<a href={d.url_verificacion} target="_blank" rel="noreferrer" style={{fontSize:12,color:C.accent,marginTop:4,display:"inline-flex",alignItems:"center",gap:4}}>🔗 Verificar credencial</a>}
+                  {safeUrl(d.url_verificacion)&&<a href={safeUrl(d.url_verificacion)} target="_blank" rel="noopener noreferrer" style={{fontSize:12,color:C.accent,marginTop:4,display:"inline-flex",alignItems:"center",gap:4}}>🔗 Verificar credencial</a>}
                 </div>
                 <button onClick={()=>removeDoc(d.id)} style={{background:"none",border:`1px solid ${C.border}`,borderRadius:6,color:C.muted,cursor:"pointer",fontSize:12,padding:"4px 9px",flexShrink:0,transition:"all .12s"}}
                   onMouseEnter={e=>{e.currentTarget.style.color=C.danger;e.currentTarget.style.borderColor=C.danger;}} onMouseLeave={e=>{e.currentTarget.style.color=C.muted;e.currentTarget.style.borderColor=C.border;}}>Eliminar</button>

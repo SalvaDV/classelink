@@ -14,6 +14,9 @@ import {
 import { dispararAlertasIA } from "./PostFormModal";
 import { DenunciaModal, FinalizarClaseModal, ContraofertaModal } from "./App";
 
+// Sanitiza URLs para evitar javascript: protocol XSS
+const safeUrl=(url)=>{if(!url)return null;const u=String(url).trim();return(/^https?:\/\//i.test(u))?u:null;};
+
 // ─── CALENDAR SYNC HELPERS ────────────────────────────────────────────────────
 const BYDAY_MAP={Lunes:"MO",Martes:"TU","Miércoles":"WE",Jueves:"TH",Viernes:"FR",Sábado:"SA",Domingo:"SU"};
 function nextWeekday(dayName,from){
@@ -4575,7 +4578,7 @@ function CursoPage({post,session,onClose,onUpdatePost}){
                           {c.tipo==="texto"&&c.texto&&tieneAcceso&&<p style={{color:C.muted,fontSize:12,margin:0,lineHeight:1.5}}>{c.texto}</p>}
                           {c.tipo==="aviso"&&c.texto&&<p style={{color:C.accent,fontSize:12,margin:0,background:C.accentDim,borderRadius:7,padding:"6px 9px"}}>{c.texto}</p>}
                           {c.tipo==="tarea"&&c.texto&&tieneAcceso&&<p style={{color:C.purple,fontSize:12,margin:0,background:"#C85CE015",borderRadius:7,padding:"6px 9px"}}>{c.texto}</p>}
-                          {(c.tipo==="video"||c.tipo==="archivo"||c.tipo==="link")&&c.url&&tieneAcceso&&<a href={c.url} target="_blank" rel="noreferrer" style={{color:C.info,fontSize:12,textDecoration:"none"}}>{c.tipo==="video"?"▶ Ver video":c.tipo==="archivo"?"📥 Abrir":"→ Link"}</a>}
+                          {(c.tipo==="video"||c.tipo==="archivo"||c.tipo==="link")&&safeUrl(c.url)&&tieneAcceso&&<a href={safeUrl(c.url)} target="_blank" rel="noopener noreferrer" style={{color:C.info,fontSize:12,textDecoration:"none"}}>{c.tipo==="video"?"▶ Ver video":c.tipo==="archivo"?"📥 Abrir":"→ Link"}</a>}
                           {!tieneAcceso&&<div style={{color:C.muted,fontSize:11,marginTop:2}}>Inscribite para ver</div>}
                           {(esMio||esAyudante)&&editingContenidoId===c.id&&(
                             <InlineContenidoEditor item={c} session={session} onSaved={(updated)=>{setContenido(prev=>prev.map(x=>x.id===c.id?{...x,...updated}:x));setEditingContenidoId(null);}} onCancel={()=>setEditingContenidoId(null)}/>

@@ -159,6 +159,7 @@ function OverviewTab({ session }) {
   const [actividad, setActividad] = useState([]);
 
   useEffect(() => {
+    let mounted=true;
     Promise.all([
       adminDb("usuarios?select=id,created_at,email,rol,bloqueado", "GET", null, session.access_token).catch(() => []),
       adminDb("publicaciones?select=id,created_at,activo,tipo,precio,moneda,materia,autor_email,autor_nombre", "GET", null, session.access_token).catch(() => []),
@@ -167,6 +168,7 @@ function OverviewTab({ session }) {
       adminDb("denuncias?select=id,created_at,revisada", "GET", null, session.access_token).catch(() => []),
       adminDb("rese%C3%B1as?select=id,estrellas,created_at", "GET", null, session.access_token).catch(() => []),
     ]).then(([users, pubs, insc, pagos, denuncias, resenas]) => {
+      if(!mounted)return;
       const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
       const semana = new Date(hoy); semana.setDate(semana.getDate() - 7);
       const mes = new Date(hoy); mes.setDate(mes.getDate() - 30);
@@ -274,7 +276,8 @@ function OverviewTab({ session }) {
         ...denuncias.filter(d => !d.revisada).slice(-3).map(d => ({ tipo: "denuncia", texto: "⚠ Nueva denuncia pendiente", time: d.created_at })),
       ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 15);
       setActividad(items);
-    }).finally(() => setLoading(false));
+    }).finally(() => { if(mounted)setLoading(false); });
+    return()=>{mounted=false;};
   }, [session]);
 
   if (loading) return <div style={{ padding: 40 }}><Spinner /></div>;
@@ -548,11 +551,13 @@ function DocentesTab({ session }) {
   const [expanded, setExpanded] = useState(null);
 
   useEffect(() => {
+    let mounted=true;
     Promise.all([
       adminDb("publicaciones?select=id,titulo,autor_email,autor_nombre,activo,tipo,precio&tipo=eq.oferta", "GET", null, session.access_token).catch(() => []),
       adminDb("rese%C3%B1as?select=estrellas,publicacion_id", "GET", null, session.access_token).catch(() => []),
       adminDb("inscripciones?select=id,publicacion_id", "GET", null, session.access_token).catch(() => []),
     ]).then(([pubs, resenas, insc]) => {
+      if(!mounted)return;
       // Build per-docente stats
       const docenteMap = {};
       pubs.forEach(p => {
@@ -576,7 +581,8 @@ function DocentesTab({ session }) {
         ratingAvg: d.ratings.length > 0 ? (d.ratings.reduce((a,b)=>a+b,0)/d.ratings.length).toFixed(1) : null,
       }));
       setData(result);
-    }).finally(() => setLoading(false));
+    }).finally(() => { if(mounted)setLoading(false); });
+    return()=>{mounted=false;};
   }, [session]);
 
   if (loading) return <div style={{ padding: 40 }}><Spinner /></div>;
@@ -677,6 +683,7 @@ function UsersTab({ session, onChatUser }) {
   });
 
   const bloquear = async (u) => {
+    if(actionLoading)return;
     setActionLoading(true);
     try {
       await adminAction("toggle_bloqueo", { user_id: u.id, bloqueado: !u.bloqueado }, session.access_token);
@@ -688,6 +695,7 @@ function UsersTab({ session, onChatUser }) {
 
   const eliminar = async (u) => {
     if (!await confirmU({msg:`¿Eliminar el usuario ${u.email}? Esta acción no se puede deshacer.`,confirmLabel:"Eliminar",danger:true})) return;
+    if(actionLoading)return;
     setActionLoading(true);
     try {
       await adminAction("eliminar_usuario", { user_id: u.id, user_email: u.email }, session.access_token);
@@ -698,6 +706,7 @@ function UsersTab({ session, onChatUser }) {
   };
 
   const cambiarRol = async (u, rol) => {
+    if(actionLoading)return;
     setActionLoading(true);
     try {
       await adminAction("cambiar_rol", { user_id: u.id, rol }, session.access_token);
