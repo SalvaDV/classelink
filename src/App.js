@@ -2064,10 +2064,25 @@ export default function App(){
   const [notifPanelOpen,setNotifPanelOpen]=useState(false);
   // Exponer función global para que el sidebar pueda abrir el panel
   useEffect(()=>{window._openNotifPanel=()=>setNotifPanelOpen(v=>!v);return()=>{window._openNotifPanel=null;};},[]);// eslint-disable-line
-  // Badge reset: MiCuentaPage llama esto cuando abre la tab Actividad
-  useEffect(()=>{window._resetCuentaBadge=()=>{setOfertasAceptadasNuevas(0);setOfertasCount(0);};return()=>{window._resetCuentaBadge=null;};},[]);// eslint-disable-line
-  // Badge reset: se llama cuando el usuario navega a Inscripciones
-  useEffect(()=>{if(page==="inscripciones")setNotifCount(0);},[page]);// eslint-disable-line
+  // Tipos de notif que alimentan cada badge
+  const TIPOS_CUENTA=["oferta_aceptada","oferta_rechazada","contraoferta","nueva_oferta","nueva_inscripcion","sistema"];
+  const TIPOS_INSC=["valorar_curso","nuevo_ayudante","busqueda_acordada","nuevo_contenido","clase_iniciada"];
+  // Badge Actividad: MiCuentaPage llama esto al abrir la tab → marca como leídas en DB
+  useEffect(()=>{
+    window._resetCuentaBadge=()=>{
+      setOfertasAceptadasNuevas(0);setOfertasCount(0);
+      const s=sessionRef.current;
+      if(s?.user?.email)sb.marcarNotifsTipoLeidas(s.user.email,TIPOS_CUENTA,s.access_token).catch(()=>{});
+    };
+    return()=>{window._resetCuentaBadge=null;};
+  },[]);// eslint-disable-line
+  // Badge Inscripciones: marca como leídas en DB al navegar a esa sección
+  useEffect(()=>{
+    if(page!=="inscripciones")return;
+    setNotifCount(0);
+    const s=sessionRef.current;
+    if(s?.user?.email)sb.marcarNotifsTipoLeidas(s.user.email,TIPOS_INSC,s.access_token).catch(()=>{});
+  },[page]);// eslint-disable-line
   // Exponer apertura del formulario de nueva publicación (usado por banners)
   useEffect(()=>{window._openNewPost=()=>{setEditPost(null);setShowForm(true);};return()=>{window._openNewPost=null;};},[]);// eslint-disable-line
   // Exponer navegación a publicación (para notification click)
