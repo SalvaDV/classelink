@@ -42,11 +42,23 @@ Deno.serve(async (req) => {
       publicacion_id === "00000000-0000-0000-0000-000000000001";
 
     if (!ES_RECARGA) {
+      // Usar la vista publicaciones_con_autor que une con usuarios y expone autor_email
       const { data: pub, error: pubErr } = await supabase
-        .from("publicaciones")
+        .from("publicaciones_con_autor")
         .select("precio, autor_email, activo")
         .eq("id", publicacion_id)
         .single();
+
+      // Verificar error de DB ANTES de verificar si pub es null
+      // (un error de DB también hace que pub sea null, enmascarando el error real)
+      if (pubErr && pubErr.code !== "PGRST116") {
+        // PGRST116 = "no rows returned" — eso sí es "no encontrada"
+        console.error("mp-checkout: DB error:", JSON.stringify(pubErr));
+        return new Response(
+          JSON.stringify({ error: "Error al validar publicación: " + pubErr.message }),
+          { status: 500, headers: { ...CORS, "Content-Type": "application/json" } }
+        );
+      }
 
       if (!pub) {
         return new Response(
@@ -54,14 +66,9 @@ Deno.serve(async (req) => {
           { status: 404, headers: { ...CORS, "Content-Type": "application/json" } }
         );
       }
-      if (pubErr) {
-        return new Response(
-          JSON.stringify({ error: "Error al validar publicación: " + pubErr.message }),
-          { status: 500, headers: { ...CORS, "Content-Type": "application/json" } }
-        );
-      }
 
-      if (!pub.activo) {
+      // activo===false explícito — null significa "sin definir" (activa por defecto)
+      if (pub.activo === false) {
         return new Response(
           JSON.stringify({ error: "Esta publicación no está activa" }),
           { status: 400, headers: { ...CORS, "Content-Type": "application/json" } }
