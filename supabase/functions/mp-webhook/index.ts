@@ -50,8 +50,15 @@ serve(async (req) => {
         return new Response("Unauthorized", { status: 401, headers: CORS });
       }
       // MP envía: ts=TIMESTAMP,v1=HASH
-      const parts = Object.fromEntries(xSignature.split(",").map(p => p.split("=")));
+      const parts = Object.fromEntries(xSignature.split(",").map(p => {
+        const idx = p.indexOf("=");
+        return idx === -1 ? [p, ""] : [p.slice(0, idx), p.slice(idx + 1)];
+      }));
       const ts = parts["ts"]; const hash = parts["v1"];
+      if (!ts || !hash) {
+        console.warn("mp-webhook: header x-signature malformado, rechazando");
+        return new Response("Invalid signature", { status: 401, headers: CORS });
+      }
       const manifest = `id:${id ?? ""};request-id:${xRequestId};ts:${ts};`;
       const encoder = new TextEncoder();
       const key = await crypto.subtle.importKey(

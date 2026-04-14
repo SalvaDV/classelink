@@ -152,21 +152,30 @@ export const sanitizeContactInfo=(text)=>{
 };
 
 // ─── AVATAR CACHE + HOOK ──────────────────────────────────────────────────────
+const AVATAR_CACHE_MAX = 200;
 export const _avatarCache={};
+const _avatarCacheSet=(key,val)=>{
+  // Purga la mitad más antigua cuando supera el límite
+  const keys=Object.keys(_avatarCache);
+  if(keys.length>=AVATAR_CACHE_MAX){
+    keys.slice(0,Math.floor(AVATAR_CACHE_MAX/2)).forEach(k=>delete _avatarCache[k]);
+  }
+  _avatarCache[key]=val;
+};
 export const useAutorAvatar=(email,token)=>{
   const lsAvatar=()=>{try{return localStorage.getItem("cl_avatar_"+email)||null;}catch{return null;}};
   const [url,setUrl]=useState(_avatarCache[email]||lsAvatar());
   useEffect(()=>{
     if(!email)return;
-    const ls=lsAvatar();if(ls)_avatarCache[email]=ls;
+    const ls=lsAvatar();if(ls)_avatarCacheSet(email,ls);
     if(_avatarCache[email]!==undefined&&_avatarCache[email]!==null)return;
-    _avatarCache[email]=null;
+    _avatarCacheSet(email,null);
     sb.getUsuarioByEmail(email,token).then(u=>{
       const av=u?.avatar_url||null;
-      _avatarCache[email]=av;
+      _avatarCacheSet(email,av);
       if(av)try{localStorage.setItem("cl_avatar_"+email,av);}catch{}
       setUrl(av);
-    }).catch(()=>{_avatarCache[email]=null;});
+    }).catch(()=>{_avatarCacheSet(email,null);});
   },[email]);// eslint-disable-line
   return url;
 };
