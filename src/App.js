@@ -2369,6 +2369,9 @@ export default function App(){
         sb.db(`publicaciones_con_autor?id=eq.${pubId}`,"GET",null,session.access_token)
           .then(r=>{if(r?.[0])setDetailPost(r[0]);}).catch(()=>{});
       }
+      // MP Connect OAuth return → navegar a Mi Cuenta (PagosTab maneja el toast)
+      const mpConnect=params.get("mp_connect");
+      if(mpConnect){setPage("cuenta");}
     }catch{}
     const onVisibility=()=>{
       clearInterval(t);

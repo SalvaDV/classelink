@@ -866,6 +866,100 @@ function ClasesTab({session,misPubs}){
 }
 
 // ─── MI CUENTA PAGE — perfil + credenciales + gestión de publicaciones ─────────
+// ─── PAGOS TAB ────────────────────────────────────────────────────────────────
+function PagosTab({session}){
+  const [status,setStatus]=useState(null);
+  const [loading,setLoading]=useState(true);
+  const [disconnecting,setDisconnecting]=useState(false);
+  const cargar=useCallback(async()=>{
+    setLoading(true);
+    try{
+      const res=await fetch(`${sb.SUPABASE_URL}/functions/v1/mp-oauth`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json","apikey":sb.SUPABASE_KEY},
+        body:JSON.stringify({action:"status",user_id:session.user.id}),
+      });
+      setStatus(await res.json());
+    }catch{setStatus({connected:false});}
+    finally{setLoading(false);}
+  },[session]);
+  useEffect(()=>{cargar();},[cargar]);
+  useEffect(()=>{
+    const p=new URLSearchParams(window.location.search);
+    const r=p.get("mp_connect");
+    if(r==="success"){toast("✅ Mercado Pago conectado correctamente","success");cargar();}
+    if(r==="error"){toast("Error al conectar Mercado Pago. Intentá de nuevo.","error");}
+    if(r){const u=new URL(window.location.href);u.searchParams.delete("mp_connect");window.history.replaceState({},"",u);}
+  },[]);// eslint-disable-line
+  const conectar=()=>window.open(`${sb.SUPABASE_URL}/functions/v1/mp-oauth?action=authorize&user_id=${session.user.id}`,"_self");
+  const desconectar=async()=>{
+    if(!window.confirm("¿Desconectar tu cuenta de Mercado Pago? Los pagos futuros usarán el sistema de Luderis."))return;
+    setDisconnecting(true);
+    try{
+      await fetch(`${sb.SUPABASE_URL}/functions/v1/mp-oauth`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json","apikey":sb.SUPABASE_KEY},
+        body:JSON.stringify({action:"disconnect",user_id:session.user.id}),
+      });
+      toast("Cuenta de MP desconectada","info");
+      setStatus({connected:false});
+    }catch{toast("Error al desconectar","error");}
+    finally{setDisconnecting(false);}
+  };
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:16}}>
+      <div style={{background:"linear-gradient(135deg,#009EE3,#007BBE)",borderRadius:18,padding:"24px 22px",color:"#fff",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:-30,right:-30,width:140,height:140,borderRadius:"50%",background:"rgba(255,255,255,.06)"}}/>
+        <div style={{position:"relative",zIndex:1}}>
+          <div style={{fontSize:22,marginBottom:6}}>💳</div>
+          <div style={{fontWeight:800,fontSize:17,marginBottom:4}}>Mercado Pago Connect</div>
+          <div style={{fontSize:13,opacity:.85,lineHeight:1.5}}>Conectá tu cuenta de MP para recibir los pagos de tus alumnos directamente en tu billetera.</div>
+        </div>
+      </div>
+      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"20px 20px"}}>
+        {loading?<div style={{textAlign:"center",padding:"20px 0"}}><Spinner/></div>:status?.connected?(
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            <div style={{display:"flex",alignItems:"center",gap:12}}>
+              <div style={{width:44,height:44,borderRadius:"50%",background:"#2EC4A015",border:"2px solid #2EC4A0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>✓</div>
+              <div>
+                <div style={{fontWeight:700,color:C.text,fontSize:14}}>Cuenta conectada</div>
+                {status.mp_email&&<div style={{fontSize:12,color:C.muted,marginTop:2}}>{status.mp_email}</div>}
+                {status.connected_at&&<div style={{fontSize:11,color:C.muted,marginTop:1}}>Conectada el {new Date(status.connected_at).toLocaleDateString("es-AR",{day:"numeric",month:"long",year:"numeric"})}</div>}
+              </div>
+            </div>
+            <div style={{background:"#2EC4A010",border:"1px solid #2EC4A040",borderRadius:10,padding:"12px 14px",fontSize:13,color:"#0F6E56",lineHeight:1.5}}>🎉 Los pagos de tus alumnos van directo a tu cuenta de Mercado Pago.</div>
+            <button onClick={desconectar} disabled={disconnecting} style={{background:"none",border:`1px solid ${C.border}`,borderRadius:9,color:C.muted,padding:"9px 16px",fontSize:13,cursor:"pointer",fontFamily:FONT,alignSelf:"flex-start",opacity:disconnecting?.5:1}}>{disconnecting?"Desconectando…":"Desconectar cuenta"}</button>
+          </div>
+        ):(
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            <div style={{display:"flex",alignItems:"center",gap:12}}>
+              <div style={{width:44,height:44,borderRadius:"50%",background:C.bg,border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>💳</div>
+              <div><div style={{fontWeight:700,color:C.text,fontSize:14}}>No conectado</div><div style={{fontSize:12,color:C.muted,marginTop:2}}>Los pagos se retienen en Luderis hasta conectar tu MP.</div></div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {[{n:1,t:"Conectás tu cuenta de Mercado Pago (1 click, seguro vía OAuth)"},{n:2,t:"El alumno paga al inscribirse o comprar un paquete"},{n:3,t:"La plata llega directamente a tu cuenta de MP al instante"}].map(s=>(
+                <div key={s.n} style={{display:"flex",alignItems:"flex-start",gap:10}}>
+                  <div style={{width:22,height:22,borderRadius:"50%",background:C.accentDim,color:C.accent,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1}}>{s.n}</div>
+                  <div style={{fontSize:13,color:C.text,lineHeight:1.5}}>{s.t}</div>
+                </div>
+              ))}
+            </div>
+            <button onClick={conectar} style={{background:"#009EE3",border:"none",borderRadius:10,color:"#fff",padding:"13px 20px",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:FONT,display:"flex",alignItems:"center",justifyContent:"center",gap:10,boxShadow:"0 4px 14px #009EE340"}}><span style={{fontSize:18}}>💳</span> Conectar Mercado Pago</button>
+            <div style={{fontSize:11,color:C.muted,textAlign:"center",lineHeight:1.5}}>Luderis nunca accede a tu dinero ni a tus datos bancarios.</div>
+          </div>
+        )}
+      </div>
+      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px"}}>
+        <div style={{fontWeight:700,color:C.text,fontSize:13,marginBottom:10}}>¿Por qué conectar MP?</div>
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {[{icon:"⚡",t:"Cobro instantáneo — la plata cae en tu MP en el momento del pago"},{icon:"🔒",t:"100% seguro — OAuth oficial de Mercado Pago, sin contraseñas"},{icon:"📊",t:"Vas a ver cada cobro en tu historial de MP directamente"},{icon:"🎓",t:"Funciona para clases particulares, cursos y paquetes de clases"}].map((f,i)=>(
+            <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start"}}><span style={{fontSize:16,flexShrink:0}}>{f.icon}</span><span style={{fontSize:13,color:C.muted,lineHeight:1.5}}>{f.t}</span></div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 // ─── ALERTAS TAB ──────────────────────────────────────────────────────────────
 // Sistema de alertas por email: el usuario define criterios con lenguaje natural
 // y cuando se publica algo similar, recibe un email automático.
@@ -1547,7 +1641,7 @@ function MiCuentaPage({session,onOpenDetail,onOpenCurso,onEdit,onNew,onOpenChat,
   const iS={width:"100%",background:C.card,border:`1px solid ${C.border}`,borderRadius:9,padding:"9px 12px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box",marginBottom:9,fontFamily:FONT};
   const ofertas=pubs.filter(p=>p.tipo==="oferta");
   const busquedas=pubs.filter(p=>p.tipo==="busqueda");
-  const [tabCuenta,setTabCuenta]=useState("publicaciones");
+  const [tabCuenta,setTabCuenta]=useState(()=>{try{const p=new URLSearchParams(window.location.search);if(p.get("mp_connect"))return"pagos";}catch{}return"publicaciones";});
   const [filtroPubsTipo,setFiltroPubsTipo]=useState("all");
   const pendientesVal=pubs.filter(p=>p.tipo==="oferta"&&p.activo===false&&p.estado_validacion==="pendiente");
   const totalOfertas=Object.values(ofertasMap).reduce((a,b)=>a+b,0);
@@ -1781,6 +1875,7 @@ function MiCuentaPage({session,onOpenDetail,onOpenCurso,onEdit,onNew,onOpenChat,
           {id:"alertas",label:"🔔 Alertas ✦",count:null},
           {id:"referidos",label:"🎁 Referidos",count:null},
           {id:"billetera",label:"💰 Billetera",count:null},
+          {id:"pagos",label:"💳 Cobros",count:null},
         ].map(tab=>{
           const active=tabCuenta===tab.id;
           return(
@@ -2037,6 +2132,7 @@ function MiCuentaPage({session,onOpenDetail,onOpenCurso,onEdit,onNew,onOpenChat,
       {tabCuenta==="alertas"&&<AlertasTab session={session}/>}
       {tabCuenta==="referidos"&&<ReferidosTab session={session}/>}
       {tabCuenta==="billetera"&&<BilleteraTab session={session}/>}
+      {tabCuenta==="pagos"&&<PagosTab session={session}/>}
       {ofertasModal&&<OfertasRecibidasModal post={ofertasModal} session={session} onClose={()=>{setOfertasModal(null);cargar();if(onRefreshOfertas)onRefreshOfertas();}} onContactar={onOpenChat}/>}
       {espacioModal&&<EspacioClaseModal oferta={espacioModal} session={session} onClose={()=>setEspacioModal(null)}/>}
       {acuerdoModal&&<AcuerdoModal oferta={acuerdoModal} session={session} onClose={()=>setAcuerdoModal(null)} onConfirmado={()=>{cargar();setAcuerdoModal(null);}}/>}
