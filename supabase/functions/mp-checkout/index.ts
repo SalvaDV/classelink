@@ -84,9 +84,7 @@ Deno.serve(async (req) => {
         ? parseFloat(precio) // precio total del paquete ya calculado
         : parseFloat(precio) * Number(cantidad);
       const precioEsperado = esPaquete ? precioReal * Number(clases_cantidad) : precioReal * Number(cantidad);
-      // Tolerancia para paquetes con descuento: máx 30% del precio base
-      const tolerancia = esPaquete ? precioEsperado * 0.30 : 1;
-      if (precioCliente > precioEsperado + 1 || precioCliente < precioEsperado - tolerancia) {
+      if (Math.abs(precioCliente - precioEsperado) > 1) {
         return new Response(
           JSON.stringify({ error: "El precio no coincide", precio_real: precioReal }),
           { status: 400, headers: { ...CORS, "Content-Type": "application/json" } }
