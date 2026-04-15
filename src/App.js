@@ -361,8 +361,9 @@ export default function App(){
   },[session]);
   // ── Supabase Realtime: notificaciones instantáneas ─────────────────────────
   useEffect(()=>{
-    if(!session?.user?.email)return;
+    if(!session?.user?.email||!session?.access_token)return;
     const email=session.user.email;
+    const token=session.access_token;
     const NOTIF_LABELS={
       nueva_inscripcion:{icon:"🎓",label:"Nueva inscripción",type:"success"},
       nueva_oferta:{icon:"📩",label:"Nueva oferta",type:"info"},
@@ -376,27 +377,36 @@ export default function App(){
       pago_aprobado_mp:{icon:"💳",label:"Pago aprobado",type:"success"},
       sistema:{icon:"📣",label:"Anuncio de Luderis",type:"info"},
     };
-    let ws,heartbeat,dead=false;
+    let ws,heartbeat,dead=false,retries=0;
+    const MAX_RETRIES=5;
     const connect=()=>{
-      if(dead)return;
+      if(dead||retries>=MAX_RETRIES)return;
+      retries++;
       try{
         ws=new WebSocket(`${sb.SUPABASE_URL.replace("https","wss")}/realtime/v1/websocket?apikey=${sb.SUPABASE_KEY}&vsn=1.0.0`);
         ws.onopen=()=>{
+          retries=0;// reset al conectar exitosamente
+          // Supabase Realtime v2: channel arbitrario + access_token del usuario para RLS
           ws.send(JSON.stringify({
-            topic:"realtime:public:notificaciones",event:"phx_join",
-            payload:{config:{broadcast:{ack:false,self:false},presence:{key:""},
-              postgres_changes:[{event:"INSERT",schema:"public",table:"notificaciones",filter:`alumno_email=eq.${email}`}]
-            }},ref:"1"
+            topic:"realtime:luderis-notifs",event:"phx_join",
+            payload:{
+              config:{broadcast:{ack:false,self:false},presence:{key:""},
+                postgres_changes:[{event:"INSERT",schema:"public",table:"notificaciones",filter:`alumno_email=eq.${email}`}]
+              },
+              access_token:token
+            },ref:"1"
           }));
           heartbeat=setInterval(()=>{if(ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify({topic:"phoenix",event:"heartbeat",payload:{},ref:"hb"}));},25000);
         };
         ws.onmessage=(e)=>{
           try{
             const msg=JSON.parse(e.data);
-            if(msg.event==="postgres_changes"||(msg.payload?.data?.type==="INSERT")){
-              const record=msg.payload?.data?.record||msg.payload?.record;
+            // Supabase envía postgres_changes con payload.data.type === "INSERT"
+            if(msg.event==="postgres_changes"){
+              const record=msg.payload?.data?.record;
+              if(!record)return;
               refreshUnread();
-              if(record?.tipo){
+              if(record.tipo){
                 const info=NOTIF_LABELS[record.tipo]||{icon:"🔔",label:"Notificación",type:"info"};
                 const texto=record.pub_titulo?`${info.icon} ${info.label} — ${record.pub_titulo}`:`${info.icon} ${info.label}`;
                 toast(texto,info.type,5000);
@@ -404,13 +414,13 @@ export default function App(){
             }
           }catch{}
         };
-        ws.onclose=()=>{clearInterval(heartbeat);if(!dead)setTimeout(connect,5000);};
-        ws.onerror=()=>ws.close();
+        ws.onclose=()=>{clearInterval(heartbeat);if(!dead&&retries<MAX_RETRIES)setTimeout(connect,Math.min(5000*retries,30000));};
+        ws.onerror=()=>{try{ws.close();}catch{}};
       }catch{}
     };
     connect();
     return()=>{dead=true;clearInterval(heartbeat);try{ws?.close();}catch{}};
-  },[session?.user?.email,refreshUnread]);
+  },[session?.user?.email,session?.access_token,refreshUnread]);
 
   useEffect(()=>{
     refreshUnread();

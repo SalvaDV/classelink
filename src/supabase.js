@@ -125,8 +125,8 @@ export const db = async (path, method = "GET", body = null, token, prefer = "") 
     const text = await res.text();
     if (!res.ok) {
       const err = text ? JSON.parse(text) : {};
-      if (err.message?.includes("JWT") || err.code === "PGRST303")
-        throw Object.assign(new Error("JWT expired"), { isExpired: true });
+      if (res.status === 401 || err.message?.includes("JWT") || err.code === "PGRST303" || err.code === "PGRST301")
+        throw Object.assign(new Error(err.message || "JWT expired"), { isExpired: true });
       throw new Error(text);
     }
     return text ? JSON.parse(text) : [];
