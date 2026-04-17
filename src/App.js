@@ -308,6 +308,24 @@ export default function App(){
   },[]);// eslint-disable-line
 
   useEffect(()=>{sb.setSessionRefreshCallback(async()=>{const c=sessionRef.current;if(!c?.refresh_token)return null;try{const s=await sb.refreshSession(c.refresh_token);sb.saveSession(s);setSession(s);return s;}catch{sb.clearSession();setSession(null);return null;}});},[]);
+
+  // ── Proactive token refresh — renueva el JWT 5 min antes de que expire ────────
+  useEffect(()=>{
+    if(!session?.refresh_token)return;
+    const doRefresh=async()=>{
+      const c=sessionRef.current;
+      if(!c?.refresh_token)return;
+      try{const s=await sb.refreshSession(c.refresh_token);sb.saveSession(s);setSession(s);}catch{}
+    };
+    // expires_at: Unix timestamp en segundos (viene de Supabase auth)
+    // Fallback: asumir 3600s de vida si no está presente
+    const expiresAt=(session.expires_at??Math.floor(Date.now()/1000)+3600)*1000;
+    const msLeft=expiresAt-Date.now();
+    const delay=Math.max(msLeft-5*60*1000,0);// 5 min antes de expirar, mínimo 0
+    const t=setTimeout(doRefresh,delay);
+    return()=>clearTimeout(t);
+  },[session?.expires_at,session?.refresh_token]);// eslint-disable-line
+
   const chatPostRef=useRef(null);
   const refreshUnread=useCallback(()=>{
     if(!session)return;
