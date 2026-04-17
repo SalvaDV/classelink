@@ -391,6 +391,7 @@ export default function App(){
       nuevo_mensaje:{icon:"💬",label:"Mensaje nuevo",type:"info"},
       clase_iniciada:{icon:"📹",label:"¡Clase en vivo!",type:"success"},
       nuevo_contenido:{icon:"📚",label:"Nuevo contenido",type:"info"},
+      nuevo_ayudante:{icon:"🤝",label:"¡Sos co-docente!",type:"success"},
       valorar_curso:{icon:"⭐",label:"Valorar curso",type:"info"},
       pago_aprobado_mp:{icon:"💳",label:"Pago aprobado",type:"success"},
       sistema:{icon:"📣",label:"Anuncio de Luderis",type:"info"},

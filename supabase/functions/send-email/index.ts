@@ -484,7 +484,12 @@ Deno.serve(async (req) => {
     });
 
     const result = await res.json();
-    if (!res.ok) throw new Error(result.message ?? `Resend error ${res.status}`);
+    if (!res.ok) {
+      console.error(`Resend error ${res.status}:`, JSON.stringify(result));
+      throw new Error(result.message ?? `Resend error ${res.status}`);
+    }
+
+    console.log(`Email sent | template=${template} | to=${Array.isArray(to)?to.join(","):to} | from=${FROM_EMAIL} | id=${result.id}`);
 
     return new Response(
       JSON.stringify({ ok: true, id: result.id }),
