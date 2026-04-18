@@ -658,6 +658,14 @@ export const liberarPagoClase = async (claseId, token) => {
 export const getPagosDocente = (email, token) =>
   db(`pagos?docente_email=eq.${encodeURIComponent(email)}&order=created_at.desc`, "GET", null, token).catch(() => []);
 
+// Pagos con info de escrow para el dashboard del docente
+export const getPagosDocenteEscrow = (email, token) =>
+  db(`pagos?docente_email=eq.${encodeURIComponent(email)}&estado=eq.approved&select=id,monto,estado_escrow,clase_finalizada_at,liberado_at,alumno_email,publicacion_id,created_at&order=created_at.desc&limit=50`, "GET", null, token).catch(() => []);
+
+// Liquidaciones del docente
+export const getLiquidaciones = (email, token) =>
+  db(`liquidaciones?docente_email=eq.${encodeURIComponent(email)}&order=periodo.desc&limit=24`, "GET", null, token).catch(() => []);
+
 // ── Streak / Racha ────────────────────────────────────────────────────────────
 // Llama al RPC del servidor para calcular la racha con hora confiable (no manipulable por el cliente)
 export const actualizarStreak = (usuarioId, token) =>

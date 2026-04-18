@@ -58,3 +58,69 @@ CREATE INDEX IF NOT EXISTS idx_pagos_clase_finalizada_at ON pagos(clase_finaliza
 CREATE INDEX IF NOT EXISTS idx_disputas_pago_id ON disputas(pago_id);
 CREATE INDEX IF NOT EXISTS idx_disputas_estado ON disputas(estado);
 CREATE INDEX IF NOT EXISTS idx_liquidaciones_docente ON liquidaciones(docente_email, periodo);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 6. Trigger: cuando inscripcion.clase_finalizada = true →
+--    actualizar pago correspondiente a estado_escrow = "retenido"
+-- ═══════════════════════════════════════════════════════════════════════════
+CREATE OR REPLACE FUNCTION fn_inscripcion_finalizada()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  -- Solo actúa cuando clase_finalizada cambia a true
+  IF NEW.clase_finalizada = true AND (OLD.clase_finalizada IS NULL OR OLD.clase_finalizada = false) THEN
+    UPDATE pagos
+    SET
+      estado_escrow      = 'retenido',
+      clase_finalizada_at = NOW()
+    WHERE
+      publicacion_id = NEW.publicacion_id
+      AND alumno_email  = NEW.alumno_email
+      AND estado        = 'approved'
+      AND estado_escrow = 'pendiente';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_inscripcion_finalizada ON inscripciones;
+CREATE TRIGGER trg_inscripcion_finalizada
+  AFTER UPDATE OF clase_finalizada ON inscripciones
+  FOR EACH ROW EXECUTE FUNCTION fn_inscripcion_finalizada();
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 7. Función de liberación automática (invocada por pg_cron)
+--    Libera pagos "retenidos" con más de 72hs sin disputa
+-- ═══════════════════════════════════════════════════════════════════════════
+CREATE OR REPLACE FUNCTION fn_liberar_pagos_vencidos()
+RETURNS INTEGER LANGUAGE plpgsql AS $$
+DECLARE
+  liberados INTEGER;
+BEGIN
+  UPDATE pagos
+  SET
+    estado_escrow = 'liberado',
+    liberado_at   = NOW()
+  WHERE
+    estado_escrow       = 'retenido'
+    AND clase_finalizada_at < NOW() - INTERVAL '72 hours';
+
+  GET DIAGNOSTICS liberados = ROW_COUNT;
+  RETURN liberados;
+END;
+$$;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 8. pg_cron: job diario que libera pagos vencidos (requiere extensión pg_cron)
+--    Activa pg_cron desde el Dashboard de Supabase → Extensions antes de correr esto.
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Eliminar job anterior si existe
+SELECT cron.unschedule('liberar_pagos_vencidos') WHERE EXISTS (
+  SELECT 1 FROM cron.job WHERE jobname = 'liberar_pagos_vencidos'
+);
+
+-- Crear job: corre todos los días a las 03:00 UTC
+SELECT cron.schedule(
+  'liberar_pagos_vencidos',
+  '0 3 * * *',
+  $$ SELECT fn_liberar_pagos_vencidos(); $$
+);

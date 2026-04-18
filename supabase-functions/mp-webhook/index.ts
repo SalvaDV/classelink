@@ -78,6 +78,9 @@ serve(async (req) => {
         docente_email:    meta.docente_email ?? null,
         monto:            pago.transaction_amount,
         estado,
+        // Escrow: los pagos aprobados quedan "pendientes" hasta que el docente
+        // marque la clase como finalizada (trigger lo pasa a "retenido")
+        ...(estado === "approved" ? { estado_escrow: "pendiente" } : {}),
         modo:             meta.modo ?? null,
         raw_data:         pago,
         updated_at:       new Date().toISOString(),

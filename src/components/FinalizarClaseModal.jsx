@@ -12,9 +12,18 @@ export default function FinalizarClaseModal({post,session,onClose,onFinalizado})
     return()=>{mounted=false;};
   },[post.id,session.access_token]);// eslint-disable-line
   const finalizar=async()=>{setSaving(true);try{
+    const ahora=new Date().toISOString();
     await sb.updatePublicacion(post.id,{finalizado:true},session.access_token);
-    await Promise.all(inscripciones.map(ins=>sb.updateInscripcion(ins.id,{clase_finalizada:true,fecha_finalizacion:new Date().toISOString()},session.access_token)));
-    await Promise.all(inscripciones.map(ins=>sb.insertNotificacion({usuario_id:ins.alumno_id||null,alumno_email:ins.alumno_email,tipo:"valorar_curso",publicacion_id:post.id,pub_titulo:post.titulo,leida:false}).catch(e=>logError("notif valorar_curso",e))));
+    await Promise.all(inscripciones.map(ins=>sb.updateInscripcion(ins.id,{clase_finalizada:true,fecha_finalizacion:ahora},session.access_token)));
+    // Notificar al alumno: tiene 72hs para disputar (el trigger de BD actualiza estado_escrow)
+    await Promise.all(inscripciones.map(ins=>sb.insertNotificacion({
+      usuario_id:ins.alumno_id||null,
+      alumno_email:ins.alumno_email,
+      tipo:"disputa_abierta",
+      publicacion_id:post.id,
+      pub_titulo:post.titulo,
+      leida:false,
+    }).catch(e=>logError("notif disputa_abierta",e))));
     onFinalizado();onClose();
   }catch(e){alert("Error al finalizar: "+e.message);}finally{setSaving(false);}};
   return(

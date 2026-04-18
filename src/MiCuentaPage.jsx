@@ -918,6 +918,29 @@ function PagosTab({session}){
   const [status,setStatus]=useState(null);
   const [loading,setLoading]=useState(true);
   const [disconnecting,setDisconnecting]=useState(false);
+  const [cobros,setCobros]=useState([]);
+  const [loadingCobros,setLoadingCobros]=useState(true);
+  const [liquidaciones,setLiquidaciones]=useState([]);
+
+  useEffect(()=>{
+    if(!session?.user?.email)return;
+    setLoadingCobros(true);
+    Promise.all([
+      sb.getPagosDocenteEscrow(session.user.email,session.access_token),
+      sb.getLiquidaciones(session.user.email,session.access_token),
+    ]).then(([p,l])=>{setCobros(p||[]);setLiquidaciones(l||[]);}).finally(()=>setLoadingCobros(false));
+  },[session?.user?.email]);// eslint-disable-line
+
+  const ESCROW_INFO={
+    pendiente:{label:"Pendiente",color:"#F59E0B",bg:"#FEF3C720",icon:"⏳",desc:"La clase aún no fue marcada como finalizada"},
+    retenido: {label:"En ventana",color:"#3B82F6",bg:"#EFF6FF",icon:"🔒",desc:"Clase finalizada — 72hs de disputa abiertas"},
+    en_disputa:{label:"En disputa",color:"#EF4444",bg:"#FEF2F2",icon:"⚠️",desc:"Disputa abierta — Luderis está revisando"},
+    liberado:  {label:"Cobrado",color:"#10B981",bg:"#F0FDF4",icon:"✅",desc:"Transferido a tu Mercado Pago"},
+    reembolsado:{label:"Reembolsado",color:"#6B7280",bg:"#F9FAFB",icon:"↩️",desc:"Reembolsado al alumno"},
+  };
+
+  const totalPendiente=cobros.filter(p=>p.estado_escrow==="pendiente"||p.estado_escrow==="retenido").reduce((a,p)=>a+Number(p.monto||0),0);
+  const totalCobrado=cobros.filter(p=>p.estado_escrow==="liberado").reduce((a,p)=>a+Number(p.monto||0),0);
   const cargar=useCallback(async()=>{
     setLoading(true);
     try{
@@ -999,11 +1022,80 @@ function PagosTab({session}){
       <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px"}}>
         <div style={{fontWeight:700,color:C.text,fontSize:13,marginBottom:10}}>¿Por qué conectar MP?</div>
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          {[{icon:"⚡",t:"Cobro instantáneo — la plata cae en tu MP en el momento del pago"},{icon:"🔒",t:"100% seguro — OAuth oficial de Mercado Pago, sin contraseñas"},{icon:"📊",t:"Vas a ver cada cobro en tu historial de MP directamente"},{icon:"🎓",t:"Funciona para clases particulares, cursos y paquetes de clases"}].map((f,i)=>(
+          {[{icon:"⚡",t:"Cobro automático — 72hs después de finalizar la clase sin disputas"},{icon:"🔒",t:"100% seguro — OAuth oficial de Mercado Pago, sin contraseñas"},{icon:"📊",t:"Vas a ver cada cobro en tu historial de MP directamente"},{icon:"🎓",t:"Funciona para clases particulares, cursos y paquetes de clases"}].map((f,i)=>(
             <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start"}}><span style={{fontSize:16,flexShrink:0}}>{f.icon}</span><span style={{fontSize:13,color:C.muted,lineHeight:1.5}}>{f.t}</span></div>
           ))}
         </div>
       </div>
+
+      {/* ── Dashboard de cobros ──────────────────────────────────────── */}
+      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"18px 20px"}}>
+        <div style={{fontWeight:700,color:C.text,fontSize:14,marginBottom:14}}>💰 Mis cobros</div>
+        {/* Resumen */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+          {[
+            {label:"Por recibir",val:totalPendiente,color:"#3B82F6"},
+            {label:"Ya cobrado",val:totalCobrado,color:"#10B981"},
+          ].map(s=>(
+            <div key={s.label} style={{background:C.bg,borderRadius:10,padding:"12px 14px",textAlign:"center"}}>
+              <div style={{fontSize:11,color:C.muted,marginBottom:4}}>{s.label}</div>
+              <div style={{fontWeight:800,fontSize:18,color:s.color}}>${s.val.toLocaleString("es-AR",{maximumFractionDigits:0})}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Lista de cobros */}
+        {loadingCobros?<div style={{textAlign:"center",padding:"16px 0"}}><Spinner/></div>:cobros.length===0?(
+          <div style={{color:C.muted,fontSize:13,textAlign:"center",padding:"16px 0"}}>Todavía no tenés cobros registrados.</div>
+        ):(
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {cobros.slice(0,10).map(p=>{
+              const info=ESCROW_INFO[p.estado_escrow]||ESCROW_INFO.pendiente;
+              const horasRestantes=p.estado_escrow==="retenido"&&p.clase_finalizada_at
+                ?Math.max(0,72-Math.floor((Date.now()-new Date(p.clase_finalizada_at).getTime())/3600000))
+                :null;
+              return(
+                <div key={p.id} style={{background:info.bg,border:`1px solid ${info.color}30`,borderRadius:10,padding:"11px 13px",display:"flex",alignItems:"center",gap:12}}>
+                  <span style={{fontSize:18,flexShrink:0}}>{info.icon}</span>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
+                      <span style={{fontSize:12,color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.alumno_email}</span>
+                      <span style={{fontWeight:700,color:C.text,fontSize:14,flexShrink:0}}>${Number(p.monto||0).toLocaleString("es-AR")}</span>
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:6,marginTop:3}}>
+                      <span style={{fontSize:11,fontWeight:600,color:info.color,background:info.bg,border:`1px solid ${info.color}40`,borderRadius:20,padding:"1px 8px"}}>{info.label}</span>
+                      {horasRestantes!==null&&<span style={{fontSize:11,color:C.muted}}>{horasRestantes}hs para liberar</span>}
+                      {p.estado_escrow==="liberado"&&p.liberado_at&&<span style={{fontSize:11,color:C.muted}}>el {new Date(p.liberado_at).toLocaleDateString("es-AR",{day:"numeric",month:"short"})}</span>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ── Liquidaciones mensuales ──────────────────────────────────── */}
+      {liquidaciones.length>0&&(
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"18px 20px"}}>
+          <div style={{fontWeight:700,color:C.text,fontSize:14,marginBottom:12}}>📄 Liquidaciones</div>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {liquidaciones.map(liq=>(
+              <div key={liq.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",background:C.bg,borderRadius:10,border:`1px solid ${C.border}`}}>
+                <div>
+                  <div style={{fontWeight:600,color:C.text,fontSize:13}}>{liq.periodo}</div>
+                  <div style={{fontSize:11,color:C.muted,marginTop:2}}>{liq.cantidad_clases} clase{liq.cantidad_clases!==1?"s":""} · Comisión ${Number(liq.comision_luderis).toLocaleString("es-AR")}</div>
+                </div>
+                <div style={{textAlign:"right"}}>
+                  <div style={{fontWeight:700,color:C.text,fontSize:14}}>${Number(liq.monto_neto).toLocaleString("es-AR")}</div>
+                  {liq.pdf_url&&<a href={liq.pdf_url} target="_blank" rel="noopener noreferrer" style={{fontSize:11,color:C.accent,textDecoration:"none"}}>Descargar PDF</a>}
+                </div>
+              </div>
+            ))}
+          </div>
+          <p style={{fontSize:11,color:C.muted,margin:"12px 0 0",lineHeight:1.5}}>Usá estas liquidaciones como respaldo para emitir tu factura mensual a Luderis.</p>
+        </div>
+      )}
     </div>
   );
 }
