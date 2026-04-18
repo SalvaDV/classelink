@@ -14,6 +14,7 @@ function OnboardingModal({session,onClose,onPublicar,upgradeMode}){
   const [dni,setDni]=useState("");
   const [fechaNac,setFechaNac]=useState("");
   const [situacionFiscal,setSituacionFiscal]=useState("");
+  const [cuit,setCuit]=useState("");
   const [esPep,setEsPep]=useState(false);
   const [terminosAceptados,setTerminosAceptados]=useState(false);
   const [kycStep,setKycStep]=useState(0);// 0=datos 1=fiscal 2=terminos
@@ -201,9 +202,9 @@ function OnboardingModal({session,onClose,onPublicar,upgradeMode}){
       </div>
     )},
 
-    // Paso KYC 1: Situación fiscal
+    // Paso KYC 1: Situación fiscal + CUIT
     {id:"kyc_fiscal",title:"Situación fiscal",sub:"¿Cómo vas a facturar tus servicios educativos?",
-     canNext:!!situacionFiscal,
+     canNext:!!situacionFiscal&&cuit.replace(/-/g,"").length===11,
      body:(
       <div style={{marginTop:8}}>
         <p style={{color:C.muted,fontSize:12,margin:"0 0 12px",lineHeight:1.6}}>Esta información nos ayuda a cumplir con las regulaciones de AFIP. Podés cambiarla más adelante.</p>
@@ -222,6 +223,39 @@ function OnboardingModal({session,onClose,onPublicar,upgradeMode}){
               {situacionFiscal===v&&<span style={{color:C.accent,fontSize:16}}>✓</span>}
             </button>
           ))}
+        </div>
+        {/* CUIT */}
+        <div style={{marginTop:14}}>
+          <label style={{display:"block",fontSize:12,fontWeight:600,color:C.text,marginBottom:6}}>
+            CUIT / CUIL
+          </label>
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="20-12345678-9"
+            value={cuit}
+            maxLength={13}
+            onChange={e=>{
+              // Permitir solo números y guiones, formato XX-XXXXXXXX-X
+              const raw=e.target.value.replace(/[^\d]/g,"").slice(0,11);
+              const fmt=raw.length>2
+                ?raw.length>10
+                  ?`${raw.slice(0,2)}-${raw.slice(2,10)}-${raw.slice(10)}`
+                  :`${raw.slice(0,2)}-${raw.slice(2)}`
+                :raw;
+              setCuit(fmt);
+            }}
+            style={{width:"100%",boxSizing:"border-box",padding:"11px 14px",borderRadius:10,border:`1.5px solid ${cuit.replace(/-/g,"").length===11?C.accent:C.border}`,background:C.surface,color:C.text,fontSize:15,fontFamily:FONT,outline:"none",transition:"border .15s"}}
+          />
+          <p style={{fontSize:11,color:C.muted,margin:"5px 0 0",lineHeight:1.5}}>
+            Necesario para emitir liquidaciones y cumplir con AFIP. Lo usamos solo para documentación fiscal.
+          </p>
+          {cuit.replace(/-/g,"").length>0&&cuit.replace(/-/g,"").length<11&&(
+            <p style={{fontSize:11,color:C.danger,margin:"4px 0 0",fontWeight:600}}>⚠ El CUIT debe tener 11 dígitos</p>
+          )}
+          {cuit.replace(/-/g,"").length===11&&(
+            <p style={{fontSize:11,color:C.success,margin:"4px 0 0",fontWeight:600}}>✓ CUIT válido</p>
+          )}
         </div>
       </div>
     )},
@@ -357,6 +391,7 @@ function OnboardingModal({session,onClose,onPublicar,upgradeMode}){
           dni:dni||null,
           fecha_nacimiento:fechaNac||null,
           situacion_fiscal:situacionFiscal||null,
+          cuit:cuit.replace(/-/g,"")||null,
           es_pep:esPep,
           terminos_aceptados:terminosAceptados,
           terminos_fecha:new Date().toISOString(),
