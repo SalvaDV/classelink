@@ -87,7 +87,7 @@ function MiActividadCard({session}){
   );
 }
 
-function DocenteStats({pubs,reseñas,inscritosMap,misOfertasEnv=[]}){
+function DocenteStats({pubs,reseñas,inscritosMap,misOfertasEnv=[],session}){
   const [seccion,setSeccion]=useState("resumen");
   const ofertas=pubs.filter(p=>p.tipo==="oferta"&&p.activo!==false&&!p.finalizado);
   const finalizadas=pubs.filter(p=>p.tipo==="oferta"&&!!p.finalizado);
@@ -164,7 +164,7 @@ function DocenteStats({pubs,reseñas,inscritosMap,misOfertasEnv=[]}){
   React.useEffect(()=>{
     if(seccion!=="ingresos")return;
     setLoadingPagos(true);
-    sb.getPagosDocente(pubs[0]?.autor_email||"",null).then(p=>setPagos(p||[])).catch(()=>setPagos([])).finally(()=>setLoadingPagos(false));
+    sb.getPagosDocente(pubs[0]?.autor_email||"",session?.access_token||null).then(p=>setPagos(p||[])).catch(()=>setPagos([])).finally(()=>setLoadingPagos(false));
   },[seccion]);
 
   if(todasOfertas.length===0)return null;
@@ -2105,7 +2105,7 @@ function MiCuentaPage({session,onOpenDetail,onOpenCurso,onEdit,onNew,onOpenChat,
       {tabCuenta==="estadisticas"&&(
         <div>
           <MiActividadCard session={session}/>
-          {loading?<Spinner/>:<DocenteStats pubs={pubs} reseñas={reseñas} inscritosMap={inscritosMap} misOfertasEnv={misOfertasEnv}/>}
+          {loading?<Spinner/>:<DocenteStats pubs={pubs} reseñas={reseñas} inscritosMap={inscritosMap} misOfertasEnv={misOfertasEnv} session={session}/>}
         </div>
       )}
 

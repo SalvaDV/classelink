@@ -60,6 +60,25 @@ CREATE INDEX IF NOT EXISTS idx_disputas_estado ON disputas(estado);
 CREATE INDEX IF NOT EXISTS idx_liquidaciones_docente ON liquidaciones(docente_email, periodo);
 
 -- ═══════════════════════════════════════════════════════════════════════════
+-- RLS — Row Level Security para nuevas tablas
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- Disputas: el alumno y el docente involucrados pueden ver sus disputas
+ALTER TABLE disputas ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "disputas_propia" ON disputas
+  FOR SELECT USING (
+    auth.jwt() ->> 'email' = alumno_email
+    OR auth.jwt() ->> 'email' = docente_email
+  );
+CREATE POLICY "disputas_insert_alumno" ON disputas
+  FOR INSERT WITH CHECK (auth.jwt() ->> 'email' = alumno_email);
+
+-- Liquidaciones: solo el docente puede ver sus liquidaciones
+ALTER TABLE liquidaciones ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "liquidaciones_propia" ON liquidaciones
+  FOR SELECT USING (auth.jwt() ->> 'email' = docente_email);
+
+-- ═══════════════════════════════════════════════════════════════════════════
 -- 6. Trigger: cuando inscripcion.clase_finalizada = true →
 --    actualizar pago correspondiente a estado_escrow = "retenido"
 -- ═══════════════════════════════════════════════════════════════════════════
