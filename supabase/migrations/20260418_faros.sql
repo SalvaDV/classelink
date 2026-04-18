@@ -44,9 +44,6 @@ CREATE POLICY "results_insert_own"
   TO authenticated
   WITH CHECK (auth.uid() = user_id);
 
--- ── Index for fast "did I solve today's puzzle?" check ───────────────────────
-CREATE INDEX IF NOT EXISTS idx_puzzle_results_user_puzzle
-  ON puzzle_results (user_id, puzzle_id);
-
-CREATE INDEX IF NOT EXISTS idx_puzzles_date
-  ON puzzles (date);
+-- Note: no explicit indexes needed — UNIQUE constraints on puzzles(date) and
+-- puzzle_results(user_id, puzzle_id) already create implicit B-tree indexes.
+-- Puzzle inserts are done via service_role key (bypasses RLS).
