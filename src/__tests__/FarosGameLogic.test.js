@@ -107,6 +107,19 @@ describe('checkWin', () => {
     s[0][0] = 'faro'; s[1][1] = 'faro'; // only 2 of 3 regions covered
     expect(checkWin(s, regions)).toBe(false);
   });
+  it('returns true for a valid 4×4 solved board', () => {
+    // Solution: (0,1)=reg0, (1,3)=reg1, (2,0)=reg2, (3,2)=reg3
+    // No same row/col, no 8-adjacency between any pair
+    const regions4 = [
+      [0, 0, 1, 1],
+      [0, 2, 2, 1],
+      [2, 2, 3, 3],
+      [2, 3, 3, 3],
+    ];
+    const s = createCellState(4, []);
+    s[0][1] = 'faro'; s[1][3] = 'faro'; s[2][0] = 'faro'; s[3][2] = 'faro';
+    expect(checkWin(s, regions4)).toBe(true);
+  });
 });
 
 describe('formatTime', () => {
