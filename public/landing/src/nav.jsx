@@ -73,7 +73,7 @@ function Nav({onEnter}){
               background:'transparent', border:'none', padding:'10px 16px',
               fontSize:14, fontWeight:500, color:'var(--ink)', fontFamily:'inherit', borderRadius:99
             }}>Ingresar</button>
-            <MagBtn onClick={onEnter} variant="gradient">Empezar gratis</MagBtn>
+            <MagBtn onClick={onEnter} variant="gradient" className="lud-nav-cta">Empezar gratis</MagBtn>
             <button className="lud-burger" onClick={()=>setMobile(m=>!m)} style={{display:'none', background:'none', border:'1px solid var(--line)', borderRadius:12, padding:10, flexDirection:'column', gap:4}}>
               <span style={{width:18, height:1.5, background:'var(--ink)', display:'block'}}/>
               <span style={{width:18, height:1.5, background:'var(--ink)', display:'block'}}/>
@@ -97,6 +97,7 @@ function Nav({onEnter}){
         @media (max-width: 640px){
           .lud-nav-links{display:none !important}
           .lud-nav-ingresar{display:none !important}
+          .lud-nav-cta{padding:9px 14px !important;font-size:13px !important}
         }
       `}</style>
     </div>

@@ -1,12 +1,14 @@
 // Cursor custom: orbe con trail + magnetic hover
 function Cursor(){
+  const isTouch = window.matchMedia('(pointer:coarse)').matches;
+  if(isTouch) return null;
+
   const dotRef = React.useRef(null);
   const ringRef = React.useRef(null);
-  const stateRef = React.useRef({x:window.innerWidth/2,y:window.innerHeight/2, rx:window.innerWidth/2, ry:window.innerHeight/2, scale:1, tScale:1, label:''});
+  const stateRef = React.useRef({x:-100,y:-100, rx:-100, ry:-100, scale:1, tScale:1, label:''});
   const [label, setLabel] = React.useState('');
 
   React.useEffect(()=>{
-    if(window.matchMedia('(pointer:coarse)').matches) return;
 
     const onMove = (e)=>{
       stateRef.current.x = e.clientX;

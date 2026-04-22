@@ -86,7 +86,7 @@ function Pill({children, variant='line'}){
 }
 
 // Magnetic button: atrae el cursor sutilmente
-function MagBtn({children, onClick, variant='ink', style={}, icon='arrow'}){
+function MagBtn({children, onClick, variant='ink', style={}, icon='arrow', className=''}){
   const ref = React.useRef(null);
   React.useEffect(()=>{
     const el = ref.current; if(!el) return;
@@ -113,7 +113,7 @@ function MagBtn({children, onClick, variant='ink', style={}, icon='arrow'}){
   }[variant];
 
   return (
-    <button ref={ref} onClick={onClick} data-cursor data-cursor-label="TAP"
+    <button ref={ref} onClick={onClick} data-cursor data-cursor-label="TAP" className={className}
       style={{
         ...vs,
         display:'inline-flex', alignItems:'center', gap:10,

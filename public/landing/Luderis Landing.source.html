@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Luderis — Aprendé lo que querés</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<template id="__bundler_thumbnail" data-bg-color="#f7f6f2">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#f7f6f2"/>
+    <circle cx="540" cy="400" r="170" fill="#2a4fc4"/>
+    <circle cx="700" cy="400" r="170" fill="#c77628" style="mix-blend-mode:multiply"/>
+    <text x="600" y="680" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="72" fill="#141a2b" text-anchor="middle" letter-spacing="-3">luderis</text>
+  </svg>
+</template>
+<style>
+  :root{
+    /* Luderis palette */
+    --ink: #0D1F3C;
+    --ink-2: #2C4A6E;
+    --muted: #5A7294;
+    --paper: #F6F9FF;
+    --paper-2: #EEF3FC;
+    --line: #DDE5F5;
+    /* Brand azul Luderis */
+    --blue: #1A6ED8;
+    --blue-deep: #0F3F7A;
+    --blue-ink: #091E42;
+    /* Teal Luderis (reemplaza naranja) */
+    --orange: #2EC4A0;
+    --orange-deep: #1E8E73;
+    /* Accentos extra */
+    --lime: #2EC4A0;
+    --violet: #7B5CF0;
+    --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:var(--font-display);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  body{overflow-x:hidden}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit}
+  ::selection{background:var(--ink);color:var(--paper)}
+  @media (pointer:fine){
+    html,body{cursor:none}
+    button,a,[data-mag]{cursor:none}
+  }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="src/shader.jsx"></script>
+  <script type="text/babel" src="src/cursor.jsx"></script>
+  <script type="text/babel" src="src/primitives.jsx"></script>
+  <script type="text/babel" src="src/nav.jsx"></script>
+  <script type="text/babel" src="src/hero.jsx"></script>
+  <script type="text/babel" src="src/worlds.jsx"></script>
+  <script type="text/babel" src="src/features.jsx"></script>
+  <script type="text/babel" src="src/how.jsx"></script>
+  <script type="text/babel" src="src/preview.jsx"></script>
+  <script type="text/babel" src="src/stats.jsx"></script>
+  <script type="text/babel" src="src/about.jsx"></script>
+  <script type="text/babel" src="src/testimonials.jsx"></script>
+  <script type="text/babel" src="src/cta.jsx"></script>
+  <script type="text/babel" src="src/contact.jsx"></script>
+  <script type="text/babel" src="src/footer.jsx"></script>
+  <script type="text/babel" src="src/app.jsx"></script>
+</body>
+</html>

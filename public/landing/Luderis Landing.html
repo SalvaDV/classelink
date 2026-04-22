@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Luderis — Aprendé lo que querés</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --ink: oklch(0.14 0.03 260);
+    --ink-2: oklch(0.32 0.04 260);
+    --muted: oklch(0.55 0.03 260);
+    --paper: oklch(0.985 0.008 90);
+    --paper-2: oklch(0.97 0.012 85);
+    --line: oklch(0.90 0.02 260);
+    --blue: oklch(0.52 0.19 255);
+    --blue-deep: oklch(0.38 0.17 258);
+    --blue-ink: oklch(0.26 0.13 260);
+    --orange: oklch(0.66 0.17 50);
+    --orange-deep: oklch(0.55 0.18 42);
+    --lime: oklch(0.88 0.22 128);
+    --violet: oklch(0.62 0.22 300);
+    --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:var(--font-display);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  body{overflow-x:hidden}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit}
+  ::selection{background:var(--ink);color:var(--paper)}
+  @media (pointer:fine){
+    html,body{cursor:none}
+    button,a,[data-mag]{cursor:none}
+  }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="src/shader.jsx"></script>
+  <script type="text/babel" src="src/cursor.jsx"></script>
+  <script type="text/babel" src="src/primitives.jsx"></script>
+  <script type="text/babel" src="src/nav.jsx"></script>
+  <script type="text/babel" src="src/hero.jsx"></script>
+  <script type="text/babel" src="src/worlds.jsx"></script>
+  <script type="text/babel" src="src/features.jsx"></script>
+  <script type="text/babel" src="src/how.jsx"></script>
+  <script type="text/babel" src="src/preview.jsx"></script>
+  <script type="text/babel" src="src/stats.jsx"></script>
+  <script type="text/babel" src="src/about.jsx"></script>
+  <script type="text/babel" src="src/testimonials.jsx"></script>
+  <script type="text/babel" src="src/cta.jsx"></script>
+  <script type="text/babel" src="src/contact.jsx"></script>
+  <script type="text/babel" src="src/footer.jsx"></script>
+  <script type="text/babel" src="src/app.jsx"></script>
+</body>
+</html>

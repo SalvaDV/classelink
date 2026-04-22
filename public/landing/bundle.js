@@ -199,7 +199,8 @@ function MagBtn({
   onClick,
   variant = 'ink',
   style = {},
-  icon = 'arrow'
+  icon = 'arrow',
+  className = ''
 }) {
   const ref = React.useRef(null);
   React.useEffect(() => {
@@ -259,6 +260,7 @@ function MagBtn({
     onClick: onClick,
     "data-cursor": true,
     "data-cursor-label": "TAP",
+    className: className,
     style: {
       ...vs,
       display: 'inline-flex',
@@ -554,20 +556,21 @@ window.Shader = Shader;
 // --- cursor.jsx ---
 // Cursor custom: orbe con trail + magnetic hover
 function Cursor() {
+  const isTouch = window.matchMedia('(pointer:coarse)').matches;
+  if (isTouch) return null;
   const dotRef = React.useRef(null);
   const ringRef = React.useRef(null);
   const stateRef = React.useRef({
-    x: window.innerWidth / 2,
-    y: window.innerHeight / 2,
-    rx: window.innerWidth / 2,
-    ry: window.innerHeight / 2,
+    x: -100,
+    y: -100,
+    rx: -100,
+    ry: -100,
     scale: 1,
     tScale: 1,
     label: ''
   });
   const [label, setLabel] = React.useState('');
   React.useEffect(() => {
-    if (window.matchMedia('(pointer:coarse)').matches) return;
     const onMove = e => {
       stateRef.current.x = e.clientX;
       stateRef.current.y = e.clientY;
@@ -852,7 +855,8 @@ function Nav({
     }
   }, "Ingresar"), /*#__PURE__*/React.createElement(MagBtn, {
     onClick: onEnter,
-    variant: "gradient"
+    variant: "gradient",
+    className: "lud-nav-cta"
   }, "Empezar gratis"), /*#__PURE__*/React.createElement("button", {
     className: "lud-burger",
     onClick: () => setMobile(m => !m),
@@ -912,6 +916,7 @@ function Nav({
         @media (max-width: 640px){
           .lud-nav-links{display:none !important}
           .lud-nav-ingresar{display:none !important}
+          .lud-nav-cta{padding:9px 14px !important;font-size:13px !important}
         }
       `));
 }
