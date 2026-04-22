@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { insertQueja } from "./supabase";
 
 const FONT    = "'Inter','Segoe UI',system-ui,sans-serif";
 const ACCENT  = "#7B3FBE";
@@ -10,12 +10,6 @@ const BG      = "#FAFBFF";
 const SURFACE = "#FFFFFF";
 const SUCCESS = "#2E7D52";
 const DANGER  = "#C53030";
-
-// Supabase anon client (solo INSERT público)
-const sb = createClient(
-  process.env.REACT_APP_SUPABASE_URL || "",
-  process.env.REACT_APP_SUPABASE_ANON_KEY || ""
-);
 
 const CATEGORIAS = [
   "Pago / Cobro",
@@ -145,22 +139,23 @@ export default function LibroQuejasPage() {
     setApiError("");
     const numero = genNumero();
 
-    const { error } = await sb.from("quejas").insert({
-      numero_queja: numero,
-      nombre:       form.nombre.trim(),
-      email:        form.email.trim().toLowerCase(),
-      rol:          form.rol,
-      categoria:    form.categoria,
-      descripcion:  form.descripcion.trim(),
-      referencia:   form.referencia.trim() || null,
-    });
-
-    setLoading(false);
-
-    if (error) {
+    try {
+      await insertQueja({
+        numero_queja: numero,
+        nombre:       form.nombre.trim(),
+        email:        form.email.trim().toLowerCase(),
+        rol:          form.rol,
+        categoria:    form.categoria,
+        descripcion:  form.descripcion.trim(),
+        referencia:   form.referencia.trim() || null,
+      });
+    } catch {
+      setLoading(false);
       setApiError("Hubo un error al registrar la queja. Por favor escribinos a contacto@luderis.com.ar.");
       return;
     }
+
+    setLoading(false);
 
     setEnviado({ numero, email: form.email.trim() });
   };
