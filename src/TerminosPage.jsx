@@ -192,6 +192,10 @@ export default function TerminosPage() {
                 {s.titulo}
               </button>
             ))}
+            <div style={{ borderTop: `1px solid ${BORDER}`, margin: "12px 16px 0", paddingTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>
+              <a href="/devoluciones" style={{ fontSize: 12, color: MUTED, display: "block", padding: "2px 0" }}>💸 Política de Devoluciones</a>
+              <a href="/consumidor" style={{ fontSize: 12, color: MUTED, display: "block", padding: "2px 0" }}>⚖️ Defensa al Consumidor</a>
+            </div>
           </div>
         </aside>
 
