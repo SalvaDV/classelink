@@ -16,15 +16,15 @@ const CATEGORIAS = [
     preguntas: [
       {
         q: "¿Cómo me registro en Luderis?",
-        a: "Podés registrarte con tu email y una contraseña, o directamente con tu cuenta de Google. Hacé clic en "Ingresar" desde la página principal y elegí la opción "Crear cuenta". Solo te lleva un par de minutos.",
+        a: "Podés registrarte con tu email y una contraseña, o directamente con tu cuenta de Google. Hacé clic en Ingresar desde la página principal y elegí la opción Crear cuenta. Solo te lleva un par de minutos.",
       },
       {
         q: "Olvidé mi contraseña, ¿qué hago?",
-        a: "En la pantalla de login, hacé clic en "¿Olvidaste tu contraseña?" e ingresá tu email. Te vamos a mandar un link para resetearla. Revisá también la carpeta de spam si no llega en unos minutos.",
+        a: "En la pantalla de login, hacé clic en ¿Olvidaste tu contraseña? e ingresá tu email. Te vamos a mandar un link para resetearla. Revisá también la carpeta de spam si no llega en unos minutos.",
       },
       {
         q: "¿Puedo ser alumno y docente al mismo tiempo?",
-        a: "Sí. Luderis permite el rol "ambos". Podés inscribirte en cursos como alumno y publicar tus propias clases como docente, todo desde la misma cuenta.",
+        a: "Sí. Luderis permite el rol ambos. Podés inscribirte en cursos como alumno y publicar tus propias clases como docente, todo desde la misma cuenta.",
       },
       {
         q: "¿Cómo cambio mi foto o datos de perfil?",
@@ -80,7 +80,7 @@ const CATEGORIAS = [
     preguntas: [
       {
         q: "¿Cómo me inscribo en un curso o clase?",
-        a: "Buscá la clase que te interesa, abrí el detalle y hacé clic en "Inscribirme". Si la clase tiene un precio, se te pedirá que completes el pago a través de la plataforma.",
+        a: "Buscá la clase que te interesa, abrí el detalle y hacé clic en Inscribirme. Si la clase tiene un precio, se te pedirá que completes el pago a través de la plataforma.",
       },
       {
         q: "¿Puedo cancelar una inscripción?",
@@ -92,7 +92,7 @@ const CATEGORIAS = [
       },
       {
         q: "¿Cómo dejo una reseña?",
-        a: "Podés dejar una reseña una vez que la clase o curso esté marcado como finalizado. Andá a la publicación en "Mis clases" y vas a ver la opción de calificar.",
+        a: "Podés dejar una reseña una vez que la clase o curso esté marcado como finalizado. Andá a la publicación en Mis clases y vas a ver la opción de calificar.",
       },
       {
         q: "¿Qué pasa si el docente cancela la clase?",
@@ -104,7 +104,7 @@ const CATEGORIAS = [
       },
       {
         q: "¿Cómo accedo al contenido de mis clases?",
-        a: "Desde la sección "Mis clases" (ícono de diploma en la barra de navegación) podés ver todas tus inscripciones activas y acceder al contenido de cada una.",
+        a: "Desde la sección Mis clases (ícono de diploma en la barra de navegación) podés ver todas tus inscripciones activas y acceder al contenido de cada una.",
       },
     ],
   },
@@ -114,7 +114,7 @@ const CATEGORIAS = [
     preguntas: [
       {
         q: "¿Cómo publico una clase o curso?",
-        a: "Hacé clic en el botón "+ Nueva publicación" y seguí los pasos del formulario. Podés elegir entre clase particular, curso grupal o búsqueda de alumnos. Completá título, descripción, precio, modalidad y horarios.",
+        a: "Hacé clic en el botón + Nueva publicación y seguí los pasos del formulario. Podés elegir entre clase particular, curso grupal o búsqueda de alumnos. Completá título, descripción, precio, modalidad y horarios.",
       },
       {
         q: "¿Qué es la verificación de docente?",
@@ -182,7 +182,7 @@ const CATEGORIAS = [
       },
       {
         q: "No recibo el email de verificación o recuperación de contraseña.",
-        a: "Revisá la carpeta de spam o correo no deseado. Si usás Gmail, revisá también en la pestaña "Promociones". Si no llegó en 10 minutos, podés solicitar el reenvío desde la pantalla de login.",
+        a: "Revisá la carpeta de spam o correo no deseado. Si usás Gmail, revisá también en la pestaña Promociones. Si no llegó en 10 minutos, podés solicitar el reenvío desde la pantalla de login.",
       },
       {
         q: "¿En qué navegadores funciona Luderis?",
@@ -208,7 +208,7 @@ const CATEGORIAS = [
       },
       {
         q: "¿Cómo reporto una publicación o usuario?",
-        a: "En cada publicación hay un botón de reporte (⚑ o "Denunciar"). Completá el motivo y lo revisaremos a la brevedad. También podés escribirnos directamente.",
+        a: "En cada publicación hay un botón de reporte (⚑ o Denunciar). Completá el motivo y lo revisaremos a la brevedad. También podés escribirnos directamente.",
       },
       {
         q: "¿Qué hace Luderis con las denuncias?",
