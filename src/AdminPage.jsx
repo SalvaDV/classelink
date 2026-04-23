@@ -70,6 +70,7 @@ const TABS = [
   { id: "users", label: "👥 Usuarios" },
   { id: "pubs", label: "📋 Publicaciones" },
   { id: "reports", label: "🚨 Denuncias" },
+  { id: "quejas", label: "📋 Quejas" },
   { id: "payments", label: "💰 Pagos" },
   { id: "escrow", label: "📦 Escrow" },
   { id: "liquidaciones", label: "📄 Liquidaciones" },
@@ -144,6 +145,7 @@ export default function AdminPage({ session, onClose, onChatUser }) {
         {tab === "users" && <UsersTab session={session} onChatUser={onChatUser} />}
         {tab === "pubs" && <PubsTab session={session} />}
         {tab === "reports" && <ReportsTab session={session} />}
+        {tab === "quejas" && <QuejasTab session={session} />}
         {tab === "payments" && <PaymentsTab session={session} />}
         {tab === "escrow" && <EscrowTab session={session} />}
         {tab === "liquidaciones" && <LiquidacionesTab session={session} />}
@@ -169,7 +171,8 @@ function OverviewTab({ session }) {
       adminDb("pagos?select=id,monto,estado,created_at", "GET", null, session.access_token).catch(e=>{logError("admin/pagos",e);return[];}),
       adminDb("denuncias?select=id,created_at,revisada", "GET", null, session.access_token).catch(e=>{logError("admin/denuncias",e);return[];}),
       adminDb("rese%C3%B1as?select=id,estrellas,created_at", "GET", null, session.access_token).catch(e=>{logError("admin/reseñas",e);return[];}),
-    ]).then(([users, pubs, insc, pagos, denuncias, resenas]) => {
+      adminDb("quejas?select=id,estado,created_at", "GET", null, session.access_token).catch(e=>{logError("admin/quejas",e);return[];}),
+    ]).then(([users, pubs, insc, pagos, denuncias, resenas, quejas]) => {
       if(!mounted)return;
       const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
       const semana = new Date(hoy); semana.setDate(semana.getDate() - 7);
@@ -256,6 +259,8 @@ function OverviewTab({ session }) {
         cohortUsuarios,
         cohortInscripciones,
         inscPorPub: pubsActivas > 0 ? (insc.length / pubsActivas).toFixed(1) : "—",
+        quejasSinAtender: (quejas||[]).filter(q => q.estado === "recibida").length,
+        quejasTotal: (quejas||[]).length,
         tasaResolucion: denuncias.length > 0 ? Math.round((denResueltas/denuncias.length)*100) : 0,
         denResueltas,
         accionesMap,
@@ -276,6 +281,7 @@ function OverviewTab({ session }) {
         ...insc.slice(-5).map(i => ({ tipo: "inscripcion", texto: "Nueva inscripción", time: i.created_at })),
         ...pagosAprobados.slice(-5).map(p => ({ tipo: "pago", texto: `Pago aprobado: $${p.monto}`, time: p.created_at })),
         ...denuncias.filter(d => !d.revisada).slice(-3).map(d => ({ tipo: "denuncia", texto: "⚠ Nueva denuncia pendiente", time: d.created_at })),
+        ...(quejas||[]).filter(q => q.estado === "recibida").slice(-3).map(q => ({ tipo: "queja", texto: "📋 Nueva queja recibida", time: q.created_at })),
       ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 15);
       setActividad(items);
     }).finally(() => { if(mounted)setLoading(false); });
@@ -285,8 +291,8 @@ function OverviewTab({ session }) {
   if (loading) return <div style={{ padding: 40 }}><Spinner /></div>;
   if (!stats) return null;
 
-  const ICON = { usuario: "👤", inscripcion: "🎓", pago: "💰", denuncia: "🚨" };
-  const COLOR = { usuario: C.info, inscripcion: C.success, pago: "#F59E0B", denuncia: C.danger };
+  const ICON = { usuario: "👤", inscripcion: "🎓", pago: "💰", denuncia: "🚨", queja: "📋" };
+  const COLOR = { usuario: C.info, inscripcion: C.success, pago: "#F59E0B", denuncia: C.danger, queja: "#3B82F6" };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -296,6 +302,15 @@ function OverviewTab({ session }) {
           <div>
             <div style={{ fontWeight: 700, color: C.danger, fontSize: 14 }}>{stats.denunciasPendientes} denuncia{stats.denunciasPendientes > 1 ? "s" : ""} pendiente{stats.denunciasPendientes > 1 ? "s" : ""} de revisión</div>
             <div style={{ color: C.muted, fontSize: 12 }}>Revisalas en la pestaña Denuncias</div>
+          </div>
+        </div>
+      )}
+      {stats.quejasSinAtender > 0 && (
+        <div style={{ background: "#3B82F615", border: "1px solid #3B82F640", borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 20 }}>📋</span>
+          <div>
+            <div style={{ fontWeight: 700, color: "#3B82F6", fontSize: 14 }}>{stats.quejasSinAtender} queja{stats.quejasSinAtender > 1 ? "s" : ""} nueva{stats.quejasSinAtender > 1 ? "s" : ""} sin revisar</div>
+            <div style={{ color: C.muted, fontSize: 12 }}>Revisalas en la pestaña Quejas · <button onClick={() => {}} style={{ background: "none", border: "none", color: "#3B82F6", cursor: "pointer", padding: 0, fontSize: 12, fontFamily: FONT, textDecoration: "underline" }}>Ir a Quejas</button></div>
           </div>
         </div>
       )}
@@ -310,6 +325,7 @@ function OverviewTab({ session }) {
         <StatBox icon="📈" label="Ticket promedio" value={stats.totalPagos > 0 ? `$${Math.round(stats.ingresoTotal / stats.totalPagos).toLocaleString("es-AR")}` : "—"} sub="por transacción" color={C.accent} />
         <StatBox icon="🔄" label="Tasa conversión" value={stats.totalInscripciones > 0 ? `${Math.round((stats.totalPagos/stats.totalInscripciones)*100)}%` : "—"} sub="inscriptos que pagaron" color={C.success} />
         <StatBox icon="🚨" label="Denuncias pend." value={stats.denunciasPendientes} color={stats.denunciasPendientes > 0 ? C.danger : C.muted} />
+        <StatBox icon="📋" label="Quejas sin revisar" value={stats.quejasSinAtender} sub={`${stats.quejasTotal} en total`} color={stats.quejasSinAtender > 0 ? "#3B82F6" : C.muted} />
       </div>
 
       {/* KPIs de denuncias */}
@@ -964,6 +980,218 @@ function ReportsTab({ session }) {
             </Card>
           ))}
           {filtered.length === 0 && <div style={{ textAlign: "center", color: C.muted, padding: 32, fontSize: 13 }}>Sin denuncias {filtro}</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── TAB: QUEJAS ─────────────────────────────────────────────────────────────
+function QuejasTab({ session }) {
+  const [quejas, setQuejas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filtroEstado, setFiltroEstado] = useState("todas");
+  const [filtroRol, setFiltroRol] = useState("todos");
+  const [busqueda, setBusqueda] = useState("");
+  const [detalle, setDetalle] = useState(null);
+
+  const ESTADO_COLOR = {
+    recibida: "#3B82F6",
+    en_revision: "#F59E0B",
+    resuelta: C.success,
+    cerrada: C.muted,
+  };
+  const ESTADO_LABEL = {
+    recibida: "Recibida",
+    en_revision: "En revisión",
+    resuelta: "Resuelta",
+    cerrada: "Cerrada",
+  };
+  const ROL_ICON = { alumno: "🎓", docente: "📚", otro: "👤" };
+
+  const cargar = useCallback(() => {
+    setLoading(true);
+    adminDb("quejas?select=*&order=created_at.desc&limit=500", "GET", null, session.access_token)
+      .then(rows => { setQuejas(rows || []); })
+      .catch(() => toast("Error cargando quejas", "error"))
+      .finally(() => setLoading(false));
+  }, [session]);
+
+  useEffect(() => { cargar(); }, [cargar]);
+
+  const cambiarEstado = async (queja, nuevoEstado, e) => {
+    if (e) e.stopPropagation();
+    try {
+      await adminDb(`quejas?id=eq.${queja.id}`, "PATCH", { estado: nuevoEstado }, session.access_token);
+      setQuejas(prev => prev.map(q => q.id === queja.id ? { ...q, estado: nuevoEstado } : q));
+      if (detalle?.id === queja.id) setDetalle(prev => ({ ...prev, estado: nuevoEstado }));
+      toast(`Estado actualizado a: ${ESTADO_LABEL[nuevoEstado]}`, "success");
+    } catch (err) { toast("Error: " + err.message, "error"); }
+  };
+
+  const stats = {
+    total: quejas.length,
+    recibidas: quejas.filter(q => q.estado === "recibida").length,
+    en_revision: quejas.filter(q => q.estado === "en_revision").length,
+    resueltas: quejas.filter(q => q.estado === "resuelta").length,
+    cerradas: quejas.filter(q => q.estado === "cerrada").length,
+  };
+
+  const filtered = quejas.filter(q => {
+    if (filtroEstado !== "todas" && q.estado !== filtroEstado) return false;
+    if (filtroRol !== "todos" && q.rol !== filtroRol) return false;
+    if (busqueda) {
+      const b = busqueda.toLowerCase();
+      return (
+        (q.numero_queja || "").toLowerCase().includes(b) ||
+        (q.nombre || "").toLowerCase().includes(b) ||
+        (q.email || "").toLowerCase().includes(b) ||
+        (q.categoria || "").toLowerCase().includes(b) ||
+        (q.descripcion || "").toLowerCase().includes(b)
+      );
+    }
+    return true;
+  });
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+
+      {/* Alerta si hay quejas sin atender */}
+      {stats.recibidas > 0 && (
+        <div style={{ background: "#3B82F615", border: "1px solid #3B82F640", borderRadius: 12, padding: "13px 18px", display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 20 }}>📋</span>
+          <div>
+            <div style={{ fontWeight: 700, color: "#3B82F6", fontSize: 14 }}>
+              {stats.recibidas} queja{stats.recibidas > 1 ? "s" : ""} nueva{stats.recibidas > 1 ? "s" : ""} sin revisar
+            </div>
+            <div style={{ color: C.muted, fontSize: 12 }}>Cambiá el estado a "En revisión" para iniciar el seguimiento</div>
+          </div>
+        </div>
+      )}
+
+      {/* Stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px,1fr))", gap: 12 }}>
+        <StatBox icon="📋" label="Total quejas" value={stats.total} color={C.text} />
+        <StatBox icon="🔵" label="Recibidas" value={stats.recibidas} color="#3B82F6" />
+        <StatBox icon="🟡" label="En revisión" value={stats.en_revision} color="#F59E0B" />
+        <StatBox icon="🟢" label="Resueltas" value={stats.resueltas} color={C.success} />
+        <StatBox icon="⚫" label="Cerradas" value={stats.cerradas} color={C.muted} />
+      </div>
+
+      {/* Filtros */}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {["todas", "recibida", "en_revision", "resuelta", "cerrada"].map(e => (
+            <Pill key={e} label={e === "todas" ? "Todas" : ESTADO_LABEL[e]} active={filtroEstado === e} onClick={() => setFiltroEstado(e)} />
+          ))}
+        </div>
+        <div style={{ height: 24, width: 1, background: C.border }} />
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {["todos", "alumno", "docente", "otro"].map(r => (
+            <Pill key={r} label={r === "todos" ? "Todos" : (ROL_ICON[r] + " " + r.charAt(0).toUpperCase() + r.slice(1))} active={filtroRol === r} onClick={() => setFiltroRol(r)} />
+          ))}
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ flex: 1 }}>
+          <SearchInput value={busqueda} onChange={setBusqueda} placeholder="Buscar por N° queja, nombre, email, categoría..." />
+        </div>
+        <button onClick={cargar}
+          style={{ background: "none", border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 14px", fontSize: 12, color: C.muted, cursor: "pointer", fontFamily: FONT, whiteSpace: "nowrap" }}>
+          🔄 Actualizar
+        </button>
+      </div>
+
+      {/* Contador de resultados */}
+      <div style={{ fontSize: 12, color: C.muted }}>
+        Mostrando <strong style={{ color: C.text }}>{filtered.length}</strong> de {quejas.length} quejas
+      </div>
+
+      {/* Lista */}
+      {loading ? <div style={{ padding: 40 }}><Spinner /></div> : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {filtered.map(q => {
+            const color = ESTADO_COLOR[q.estado] || C.muted;
+            const isOpen = detalle?.id === q.id;
+            return (
+              <Card key={q.id}
+                style={{ borderLeft: `3px solid ${color}`, cursor: "pointer", transition: "box-shadow .15s" }}
+                onClick={() => setDetalle(isOpen ? null : q)}>
+                {/* Fila principal */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6, flexWrap: "wrap" }}>
+                      <span style={{ fontFamily: "monospace", fontSize: 13, fontWeight: 800, color: C.accent, letterSpacing: .3 }}>
+                        {q.numero_queja}
+                      </span>
+                      <Badge color={color}>{ESTADO_LABEL[q.estado] || q.estado}</Badge>
+                      <Badge color={C.muted}>{ROL_ICON[q.rol] || ""} {q.rol}</Badge>
+                      <span style={{ fontSize: 11, color: C.muted }}>{fmt(q.created_at)}</span>
+                    </div>
+                    <div style={{ fontSize: 13, color: C.text, marginBottom: 3 }}>
+                      <strong>{q.nombre}</strong>
+                      <span style={{ color: C.muted, marginLeft: 8 }}>{q.email}</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: C.muted, fontStyle: "italic" }}>{q.categoria}</div>
+                  </div>
+                  <span style={{ fontSize: 14, color: C.muted, flexShrink: 0, paddingTop: 2 }}>{isOpen ? "▲" : "▼"}</span>
+                </div>
+
+                {/* Detalle expandido */}
+                {isOpen && (
+                  <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C.border}` }}>
+                    <div style={{ background: C.bg, borderRadius: 8, padding: "12px 14px", marginBottom: 14 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .5, marginBottom: 6 }}>Descripción del reclamo</div>
+                      <p style={{ margin: 0, fontSize: 13, color: C.text, lineHeight: 1.65 }}>{q.descripcion}</p>
+                    </div>
+
+                    {q.referencia && (
+                      <div style={{ marginBottom: 14 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .5 }}>Referencia: </span>
+                        <span style={{ fontSize: 12, color: C.text, fontFamily: "monospace" }}>{q.referencia}</span>
+                      </div>
+                    )}
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14, fontSize: 12 }}>
+                      <div><span style={{ color: C.muted }}>ID: </span><span style={{ fontFamily: "monospace", color: C.text }}>{q.id}</span></div>
+                      <div><span style={{ color: C.muted }}>Ingresado: </span><span style={{ color: C.text }}>{q.created_at ? new Date(q.created_at).toLocaleString("es-AR") : "—"}</span></div>
+                    </div>
+
+                    {/* Botones de cambio de estado */}
+                    <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .5, marginBottom: 8 }}>Cambiar estado</div>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {[
+                        { id: "recibida", label: "🔵 Recibida" },
+                        { id: "en_revision", label: "🟡 En revisión" },
+                        { id: "resuelta", label: "🟢 Resuelta" },
+                        { id: "cerrada", label: "⚫ Cerrada" },
+                      ].map(({ id, label }) => (
+                        <button key={id}
+                          onClick={e => cambiarEstado(q, id, e)}
+                          style={{
+                            background: q.estado === id ? (ESTADO_COLOR[id] + "22") : C.bg,
+                            border: `1px solid ${q.estado === id ? ESTADO_COLOR[id] : C.border}`,
+                            borderRadius: 6, padding: "6px 12px", fontSize: 12,
+                            fontWeight: q.estado === id ? 700 : 400,
+                            color: q.estado === id ? ESTADO_COLOR[id] : C.muted,
+                            cursor: "pointer", fontFamily: FONT, transition: "all .1s",
+                          }}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+
+          {filtered.length === 0 && !loading && (
+            <div style={{ textAlign: "center", color: C.muted, padding: "48px 0", fontSize: 14 }}>
+              <div style={{ fontSize: 36, marginBottom: 12 }}>📭</div>
+              {busqueda ? `Sin resultados para "${busqueda}"` : "No hay quejas con ese estado"}
+            </div>
+          )}
         </div>
       )}
     </div>
