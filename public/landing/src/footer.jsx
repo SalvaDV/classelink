@@ -6,14 +6,14 @@ function Footer(){
   const cols = [
     {h:'Producto', items:['Cursos','Clases particulares','Búsqueda con IA','Certificados','Pagos']},
     {h:'Empresa', items:['Nosotros','Carreras','Manifiesto','Press kit','Contacto']},
-    {h:'Recursos', items:['Blog','Guías','Changelog','Status','Ayuda']},
+    {h:'Recursos', items:['Ayuda','Libro de Quejas','Changelog','Status','Blog']},
     {h:'Legal', items:[
-      {label:'Términos',    tab:'tc'},
-      {label:'Privacidad',  tab:'priv'},
-      {label:'Quejas',      tab:'quejas'},
-      {label:'Accesibilidad',tab:'acceso'},
-      {label:'Consumidor',  tab:'consumidor'},
-      {label:'Cookies',     tab:'cookies'},
+      {label:'Términos',            href:'/terminos'},
+      {label:'Privacidad',          href:'/privacidad'},
+      {label:'Quejas',              href:'/quejas'},
+      {label:'Accesibilidad',       href:'/accesibilidad'},
+      {label:'Defensa al Consumidor',href:'/consumidor'},
+      {label:'Devoluciones',        href:'/devoluciones'},
     ]},
   ];
   return (
@@ -45,9 +45,10 @@ function Footer(){
               <div style={{fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'.14em', color:'oklch(1 0 0 / .5)', textTransform:'uppercase', marginBottom:18}}>{c.h}</div>
               <div style={{display:'flex', flexDirection:'column', gap:10}}>
                 {c.items.map(i=>{
-                  const isLegal = typeof i === 'object';
-                  const label = isLegal ? i.label : i;
-                  const href = isLegal ? `/?legal=${i.tab}` : '#';
+                  const isObj = typeof i === 'object';
+                  const label = isObj ? i.label : i;
+                  const resourceLinks = {'Ayuda':'/ayuda','Libro de Quejas':'/quejas'};
+                  const href = isObj ? i.href : (resourceLinks[i]||'#');
                   return(
                     <a key={label} href={href} data-cursor style={{fontSize:14, color:'var(--paper)', transition:'opacity .2s'}}
                       onMouseEnter={e=>e.currentTarget.style.opacity='.6'}

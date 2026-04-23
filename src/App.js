@@ -19,6 +19,13 @@ import {
   LegalModal,
 } from "./shared";
 import LandingPage from "./LandingPage";
+import TerminosPage from "./TerminosPage";
+import PoliticaDevoluciones from "./PoliticaDevoluciones";
+import DefensaConsumidorPage from "./DefensaConsumidorPage";
+import AyudaPage from "./AyudaPage";
+import LibroQuejasPage from "./LibroQuejasPage";
+import AccesibilidadPage from "./AccesibilidadPage";
+import PrivacidadPage from "./PrivacidadPage";
 import AuthScreen from "./AuthScreen";
 import { PriceSlider } from "./PostFormModal";
 import { AcuerdoModal, EspacioClaseModal } from "./MiCuentaPage";
@@ -532,6 +539,14 @@ export default function App(){
   // Tema con estado React para re-render
   const [currentTheme,setCurrentTheme]=useState(_themeKey());
   const toggleTheme=()=>{const next=currentTheme==="light"?"dark":"light";applyTheme(next);setCurrentTheme(next);forceThemeRender(n=>n+1);};
+  // Rutas públicas sin autenticación
+  if(window.location.pathname==="/terminos")return <TerminosPage/>;
+  if(window.location.pathname==="/devoluciones")return <PoliticaDevoluciones/>;
+  if(window.location.pathname==="/consumidor")return <DefensaConsumidorPage/>;
+  if(window.location.pathname==="/ayuda")return <AyudaPage/>;
+  if(window.location.pathname==="/quejas")return <LibroQuejasPage/>;
+  if(window.location.pathname==="/accesibilidad")return <AccesibilidadPage/>;
+  if(window.location.pathname==="/privacidad")return <PrivacidadPage/>;
   if(!session){
     const showAuth=window.location.hash==="#auth"||sessionStorage.getItem("ld_auth")==="1";
     const goAuth=()=>{sessionStorage.setItem("ld_auth","1");window.location.hash="#auth";forceThemeRender(n=>n+1);};

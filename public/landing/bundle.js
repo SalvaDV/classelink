@@ -3523,27 +3523,27 @@ function Footer() {
     items: ['Nosotros', 'Carreras', 'Manifiesto', 'Press kit', 'Contacto']
   }, {
     h: 'Recursos',
-    items: ['Blog', 'Guías', 'Changelog', 'Status', 'Ayuda']
+    items: ['Ayuda', 'Libro de Quejas', 'Changelog', 'Status', 'Blog']
   }, {
     h: 'Legal',
     items: [{
       label: 'Términos',
-      tab: 'tc'
+      href: '/terminos'
     }, {
       label: 'Privacidad',
-      tab: 'priv'
+      href: '/privacidad'
     }, {
       label: 'Quejas',
-      tab: 'quejas'
+      href: '/quejas'
     }, {
       label: 'Accesibilidad',
-      tab: 'acceso'
+      href: '/accesibilidad'
     }, {
-      label: 'Consumidor',
-      tab: 'consumidor'
+      label: 'Defensa al Consumidor',
+      href: '/consumidor'
     }, {
-      label: 'Cookies',
-      tab: 'cookies'
+      label: 'Devoluciones',
+      href: '/devoluciones'
     }]
   }];
   return /*#__PURE__*/React.createElement("footer", {
@@ -3636,9 +3636,13 @@ function Footer() {
       gap: 10
     }
   }, c.items.map(i => {
-    const isLegal = typeof i === 'object';
-    const label = isLegal ? i.label : i;
-    const href = isLegal ? `/?legal=${i.tab}` : '#';
+    const isObj = typeof i === 'object';
+    const label = isObj ? i.label : i;
+    const resourceLinks = {
+      'Ayuda': '/ayuda',
+      'Libro de Quejas': '/quejas'
+    };
+    const href = isObj ? i.href : resourceLinks[i] || '#';
     return /*#__PURE__*/React.createElement("a", {
       key: label,
       href: href,

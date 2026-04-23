@@ -44,6 +44,10 @@ export const setDisplayName = (email, name) => {
 export const insertUsuario = (data, token) =>
   db("usuarios", "POST", data, token, "return=representation");
 
+// ── Quejas (libro de quejas público) ─────────────────────────────────────────
+export const insertQueja = (data) =>
+  db("quejas", "POST", data, null, "return=representation");
+
 // Actualiza campos del perfil (nombre, bio, etc.) en la tabla usuarios
 export const updateUsuario = (id, data, token) =>
   db(`usuarios?id=eq.${id}`, "PATCH", data, token, "return=representation");
